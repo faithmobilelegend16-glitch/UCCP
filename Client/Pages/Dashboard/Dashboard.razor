@@ -1,0 +1,1074 @@
+﻿@page "/dashboard"
+@inject HttpClient Http
+@inject IJSRuntime Js
+@using Radzen
+
+
+<!-- Stats Cards -->
+<div class="stats-container mb-4">
+    <div class="row g-3">
+        <div class="col-lg-3 col-md-6">
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-label">Total Members</span>
+                    <span class="stat-trend up">↑ +12.5%</span>
+                </div>
+                <div class="stat-value">@(members?.Count ?? 0)</div>
+                <div class="stat-description">Active church members</div>
+                <div class="stat-meta">All age groups</div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6">
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-label">Total Attendees</span>
+                    <span class="stat-trend up">↑ +8.3%</span>
+                </div>
+                <div class="stat-value">@(members?.Count(m => !string.IsNullOrEmpty(m.LastAttendance)) ?? 0)</div>
+                <div class="stat-description">Members with recent attendance</div>
+                <div class="stat-meta">Last 30 days</div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6">
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-label">Total Volunteers</span>
+                    <span class="stat-trend up">✓ +15.2%</span>
+                </div>
+                <div class="stat-value">@(members?.Count(m => !string.IsNullOrEmpty(m.MinistryAssignment)) ?? 0)</div>
+                <div class="stat-description">Volunteers serving</div>
+                <div class="stat-meta">Assigned to ministries</div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6">
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-label">Giving Rate</span>
+                    <span class="stat-trend up">↑ @givingPercentage%</span>
+                </div>
+                <div class="stat-value">@givingPercentage%</div>
+                <div class="stat-description">Active givers</div>
+                <div class="stat-meta">Tithes and offerings</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+    <!-- Attendance Chart Card -->
+    <div class="visitor-card mb-4">
+        <div class="visitor-header">
+            <div>
+                <h6 class="visitor-title">Member Attendance by Month</h6>
+                <p class="visitor-subtitle">@GetAttendanceSubtitle()</p>
+            </div>
+        </div>
+        <div class="visitor-chart">
+            <RadzenChart>
+                <RadzenColumnSeries Data="@GetAttendanceData()" CategoryProperty="Month" Title="Attendees" ValueProperty="Count">
+                    <RadzenSeriesDataLabels Visible="false" />
+                </RadzenColumnSeries>
+
+                @if (radzenAvailable)
+                {
+                <RadzenChartTooltip />
+                }
+
+                <RadzenColumnOptions Radius="5" />
+                <RadzenValueAxis>
+                    <RadzenGridLines Visible="true" />
+                    <RadzenAxisTitle Text="Number of Attendees" />
+                </RadzenValueAxis>
+                <RadzenCategoryAxis>
+                    <RadzenAxisTitle Text="Month" />
+                </RadzenCategoryAxis>
+            </RadzenChart>
+        </div>
+    </div>
+
+    <!-- Filters Card -->
+    <div class="filters-section mb-4">
+        <div class="row g-3">
+            <!-- Search Input -->
+            <div class="col-lg-3 col-md-6">
+                <div class="filter-group">
+                    <label class="filter-label">Search Members</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-search search-icon"></i>
+                        <input class="filter-input" placeholder="Search by name or email..."
+                               @bind="@search" @bind:event="oninput"/>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ministry Filter -->
+            <div class="col-lg-3 col-md-6">
+                <div class="filter-group">
+                    <label class="filter-label">Ministry</label>
+                    <select class="filter-select" @onchange="OnMinistryChanged">
+                        <option value="">All Ministries</option>
+                        <option value="Worship">Worship</option>
+                        <option value="Youth">Youth</option>
+                        <option value="Outreach">Outreach</option>
+                        <option value="Teaching">Teaching</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Status Filter -->
+            <div class="col-lg-3 col-md-6">
+                <div class="filter-group">
+                    <label class="filter-label">Member Status</label>
+                    <select class="filter-select" @onchange="OnStatusChanged">
+                        <option value="">All Status</option>
+                        <option value="ACTIVE">Active</option>
+                        <option value="INACTIVE">Inactive</option>
+                        <option value="VISITOR">Visitor</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="col-lg-3 col-md-6">
+                <div class="filter-group">
+              
+                    <!-- Register Member Button -->
+                    <div class="register-button-container mb-4">
+                        <button class="btn-register-full" @onclick="OpenRegisterModal">
+                            <i class="fas fa-plus"></i> Register New Member
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+           
+        </div>
+    </div>
+
+
+
+<!-- Register Modal -->
+@if (showRegisterModal)
+{
+<div class="modal-overlay" @onclick="CloseRegisterModal">
+    <div class="modal-content" @onclick:stopPropagation="true">
+        <div class="modal-header">
+            <h5 class="modal-title">Register New Church Member</h5>
+            <button class="btn-close" @onclick="CloseRegisterModal">&times;</button>
+        </div>
+
+        <div class="modal-body">
+            <form @onsubmit="HandleRegisterSubmit">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">First Name *</label>
+                        <input type="text" class="form-input" placeholder="Enter first name" @bind="newMember.FirstName" required />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Last Name *</label>
+                        <input type="text" class="form-input" placeholder="Enter last name" @bind="newMember.LastName" required />
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Email *</label>
+                        <input type="email" class="form-input" placeholder="Enter email address" @bind="newMember.Email" required />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Phone Number *</label>
+                        <input type="tel" class="form-input" placeholder="Enter phone number" @bind="newMember.PhoneNumber" required />
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Join Date *</label>
+                        <input type="date" class="form-input" @bind="newMember.JoinDate" required />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Member Status *</label>
+                        <select class="form-input" @bind="newMember.Status" required>
+                            <option value="">Select Status</option>
+                            <option value="ACTIVE">Active</option>
+                            <option value="INACTIVE">Inactive</option>
+                            <option value="VISITOR">Visitor</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Ministry Assignment</label>
+                        <select class="form-input" @bind="newMember.MinistryAssignment">
+                            <option value="">Select Ministry (Optional)</option>
+                            <option value="Worship">Worship</option>
+                            <option value="Youth">Youth</option>
+                            <option value="Outreach">Outreach</option>
+                            <option value="Teaching">Teaching</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Last Attendance</label>
+                        <input type="text" class="form-input" placeholder="e.g., Dec 24, 2025" @bind="newMember.LastAttendance" />
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrEmpty(registerMessage))
+                {
+                <div class="alert alert-@(registerSuccess ? "success" : "error")">
+                    @registerMessage
+                </div>
+                }
+
+                <div class="modal-footer">
+                    <button type="button" class="btn-cancel" @onclick="CloseRegisterModal">Cancel</button>
+                    <button type="submit" class="btn-submit">Register Member</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+}
+
+
+    <!-- Table Header with Count -->
+    <div class="table-header mb-3">
+        <h6 class="table-title">Church Members: <span class="count-badge">@(filteredMembers?.Count ?? 0)</span></h6>
+    </div>
+
+    <!-- Data Table -->
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+            <tr>
+                <th style="width: 160px;">Member Name</th>
+                <th style="width: 130px;">Contact Number</th>
+                <th style="width: 160px;">Email</th>
+                <th style="width: 130px;">Join Date</th>
+                <th style="width: 120px;">Ministry</th>
+                <th style="width: 150px;">Last Attendance</th>
+                <th style="width: 100px;">Status</th>
+            </tr>
+            </thead>
+            <tbody>
+            @if (filteredMembers != null && filteredMembers.Count > 0)
+            {
+            @foreach (var member in filteredMembers.Take(10))
+            {
+            <tr>
+                <td>
+                    <div class="cell-label">Member:</div>
+                    <div class="cell-value">
+                        @($"{member.FirstName} {member.LastName}"
+                        .Trim()
+                        .ToUpper())
+                    </div>
+                </td>
+                <td>
+                    <div class="cell-label">Contact:</div>
+                    <div class="cell-value">@member.PhoneNumber</div>
+                </td>
+                <td>
+                    <div class="cell-label">Email:</div>
+                    <div class="cell-value">@member.Email</div>
+                </td>
+                <td>
+                    <div class="cell-label">Joined:</div>
+                    <div class="cell-value">@member.JoinDate?.ToString("MMM dd, yyyy")</div>
+                </td>
+                <td>
+                    <div class="cell-label">Ministry:</div>
+                    <div class="cell-value" style="@(string.IsNullOrEmpty(member.MinistryAssignment) ? "color: #9ca3af;" : "")">@(string.IsNullOrEmpty(member.MinistryAssignment) ? "No Assignment" : member.MinistryAssignment)</div>
+                </td>
+                <td>
+                    <div class="cell-label">Last Attendance:</div>
+                    <div class="cell-value" style="@(string.IsNullOrEmpty(member.LastAttendance) ? "color: #ef4444; font-weight: bold;" : "")">@(string.IsNullOrEmpty(member.LastAttendance) ? "Not Recorded" : member.LastAttendance)</div>
+                </td>
+                <td>
+                    <div class="cell-label">Status:</div>
+                    <div class="cell-value status-badge @GetStatusClass(member.Status)" style="@(string.IsNullOrEmpty(member.Status) ? "color: #6b7280; font-weight: bold;" : "")">@(string.IsNullOrEmpty(member.Status) ? "Unknown" : member.Status)</div>
+                </td>
+            </tr>
+            }
+            }
+            else
+            {
+            <tr>
+                <td colspan="7" class="text-center py-4">
+                    <span style="color: #999;">No members found</span>
+                </td>
+            </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination Info -->
+    <div class="pagination-info">
+        <span>0 of @(filteredMembers?.Count ?? 0) member(s) selected.</span>
+    </div>
+
+    <style>
+        /* Register Button */
+        .register-button-container {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .btn-register {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-register:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1f2937;
+            margin: 0;
+        }
+
+        .btn-close {
+            background: none;
+            border: none;
+            font-size: 28px;
+            color: #9ca3af;
+            cursor: pointer;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s;
+        }
+
+        .btn-close:hover {
+            color: #1f2937;
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            padding: 20px;
+            border-top: 1px solid #e5e7eb;
+            background: #f9fafb;
+        }
+
+        /* Form Styles */
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .form-row:last-of-type {
+            margin-bottom: 0;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .form-input {
+            padding: 10px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 13px;
+            color: #374151;
+            background: #fff;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 16px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .alert-success {
+            background: #dcfce7;
+            color: #15803d;
+            border: 1px solid #86efac;
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+
+        /* Button Styles */
+        .btn-cancel {
+            background: #e5e7eb;
+            color: #374151;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-cancel:hover {
+            background: #d1d5db;
+        }
+
+        .btn-submit {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        /* Filters Section */
+        .filters-section {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .filter-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #374151;
+            margin: 0;
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            color: #9ca3af;
+            font-size: 13px;
+            pointer-events: none;
+        }
+
+        .filter-input {
+            width: 100%;
+            padding: 8px 12px 8px 36px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 13px;
+            color: #374151;
+            background: #fff;
+            transition: all 0.2s;
+        }
+
+        .filter-input:focus {
+            outline: none;
+            border-color: #8b5cf6;
+            box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.1);
+        }
+
+        .filter-select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 13px;
+            color: #374151;
+            background: #fff;
+            cursor: pointer;
+            transition: all 0.2s;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+            padding-right: 28px;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: #8b5cf6;
+            box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.1);
+        }
+
+        /* Status Badge */
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .status-badge.active {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+        .status-badge.inactive {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .status-badge.visitor {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        /* Table Header */
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 4px;
+        }
+
+        .table-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1f2937;
+            margin: 0;
+        }
+
+        .count-badge {
+            color: #1f2937;
+            font-weight: 600;
+        }
+
+        /* Table Container */
+        .table-container {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Data Table */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .data-table thead {
+            background-color: #f9fafb;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .data-table thead th {
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 600;
+            color: #374151;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            border-right: 1px solid #e5e7eb;
+        }
+
+        .data-table thead th:last-child {
+            border-right: none;
+        }
+
+        .data-table tbody tr {
+            border-bottom: 1px solid #e5e7eb;
+            transition: background-color 0.2s;
+        }
+
+        .data-table tbody tr:hover {
+            background-color: #f9fafb;
+        }
+
+        .data-table tbody td {
+            padding: 12px 16px;
+            border-right: 1px solid #e5e7eb;
+            vertical-align: middle;
+        }
+
+        .data-table tbody td:last-child {
+            border-right: none;
+        }
+
+        .cell-label {
+            font-size: 12px;
+            color: #9ca3af;
+            margin-bottom: 2px;
+        }
+
+        .cell-value {
+            font-size: 13px;
+            color: #1f2937;
+            font-weight: 500;
+            word-wrap: break-word;
+        }
+
+        /* Pagination */
+        .pagination-info {
+            padding: 12px 16px;
+            font-size: 12px;
+            color: #6b7280;
+            background-color: #f9fafb;
+            border-top: 1px solid #e5e7eb;
+            border-radius: 0 0 8px 8px;
+        }
+
+        /* Stats Container */
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+        }
+
+        .stat-card {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            transition: box-shadow 0.2s;
+        }
+
+        .stat-card:hover {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #9ca3af;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-trend {
+            font-size: 12px;
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 4px;
+            background: #dbeafe;
+            color: #0369a1;
+        }
+
+        .stat-trend.up {
+            background: #e9d5ff;
+            color: #6d28d9;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 8px;
+        }
+
+        .stat-description {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 4px;
+        }
+
+        .stat-meta {
+            font-size: 12px;
+            color: #9ca3af;
+        }
+
+        /* Visitor Card */
+        .visitor-card {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .visitor-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 24px;
+        }
+
+        .visitor-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #1f2937;
+            margin: 0 0 4px 0;
+        }
+
+        .visitor-subtitle {
+            font-size: 13px;
+            color: #9ca3af;
+            margin: 0;
+        }
+
+        .visitor-chart {
+            width: 100%;
+            height: 280px;
+        }
+
+        .visitor-chart svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Responsive */
+        @@media (max-width: 1024px) {
+            .data-table thead th {
+                padding: 10px 12px;
+                font-size: 11px;
+            }
+
+            .data-table tbody td {
+                padding: 10px 12px;
+            }
+
+            .cell-label {
+                font-size: 11px;
+            }
+
+            .cell-value {
+                font-size: 12px;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @@media (max-width: 768px) {
+            .filters-section {
+                padding: 16px;
+            }
+
+            .table-container {
+                overflow-x: auto;
+            }
+
+            .data-table {
+                font-size: 12px;
+            }
+
+            .data-table thead th {
+                padding: 8px 10px;
+                font-size: 10px;
+            }
+
+            .data-table tbody td {
+                padding: 8px 10px;
+            }
+
+            .modal-content {
+                width: 95%;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .btn-register-full {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+            margin-top: 23px;
+        }
+    </style>
+
+
+    @code {
+        private bool radzenAvailable;
+        private string search = "";
+        private string selectedMinistry = "";
+        private string selectedStatus = "";
+        private double givingPercentage = 78.5;
+        private bool showRegisterModal = false;
+        private string registerMessage = "";
+        private bool registerSuccess = false;
+
+        private List<ChurchMember> members;
+        private List<ChurchMember> filteredMembers;
+        private ChurchMember newMember = new();
+        
+protected override async Task OnInitializedAsync()
+{
+// Initialize with dummy data
+members = new List<ChurchMember>
+{
+new ChurchMember { FirstName = "Mae", LastName = "Jaban", PhoneNumber = "09923352031", Email = "mae.jaban@gmail.com", JoinDate = new DateTime(2020, 6, 22), MinistryAssignment = "Youth", LastAttendance = "Dec 28, 2025", Status = "ACTIVE" },
+new ChurchMember { FirstName = "Yudane", LastName = "Calo", PhoneNumber = "09923352032", Email = "yudane.calo@gmail.com", JoinDate = new DateTime(2022, 1, 10), MinistryAssignment = "Outreach", LastAttendance = "Dec 21, 2025", Status = "ACTIVE" },
+new ChurchMember { FirstName = "Jonathan", LastName = "Andahan", PhoneNumber = "09923352033", Email = "jonathan.andahan@gmail.com", JoinDate = new DateTime(2021, 3, 15), MinistryAssignment = "Worship", LastAttendance = "Dec 24, 2025", Status = "ACTIVE" },
+new ChurchMember { FirstName = "Sarah", LastName = "Brown", PhoneNumber = "555-0104", Email = "sarah.brown@email.com", JoinDate = new DateTime(2023, 5, 8), MinistryAssignment = "Teaching", LastAttendance = "Dec 24, 2025", Status = "ACTIVE" },
+new ChurchMember { FirstName = "Michael", LastName = "Davis", PhoneNumber = "555-0105", Email = "michael.davis@email.com", JoinDate = new DateTime(2021, 9, 3), MinistryAssignment = "Worship", LastAttendance = "Dec 17, 2025", Status = "ACTIVE" },
+new ChurchMember { FirstName = "Jennifer", LastName = "Miller", PhoneNumber = "555-0106", Email = "jennifer.miller@email.com", JoinDate = new DateTime(2022, 11, 20), MinistryAssignment = "", LastAttendance = "", Status = "INACTIVE" },
+new ChurchMember { FirstName = "James", LastName = "Wilson", PhoneNumber = "555-0107", Email = "james.wilson@email.com", JoinDate = new DateTime(2023, 2, 14), MinistryAssignment = "Youth", LastAttendance = "Dec 24, 2025", Status = "ACTIVE" },
+new ChurchMember { FirstName = "Patricia", LastName = "Moore", PhoneNumber = "555-0108", Email = "patricia.moore@email.com", JoinDate = new DateTime(2023, 8, 30), MinistryAssignment = "", LastAttendance = "Dec 24, 2025", Status = "VISITOR" },
+new ChurchMember { FirstName = "Robert", LastName = "Taylor", PhoneNumber = "555-0109", Email = "robert.taylor@email.com", JoinDate = new DateTime(2020, 4, 12), MinistryAssignment = "Outreach", LastAttendance = "Dec 28, 2025", Status = "ACTIVE" },
+new ChurchMember { FirstName = "Linda", LastName = "Anderson", PhoneNumber = "555-0110", Email = "linda.anderson@email.com", JoinDate = new DateTime(2021, 7, 25), MinistryAssignment = "Teaching", LastAttendance = "Dec 22, 2025", Status = "ACTIVE" },
+new ChurchMember { FirstName = "William", LastName = "Thomas", PhoneNumber = "555-0111", Email = "william.thomas@email.com", JoinDate = new DateTime(2022, 10, 5), MinistryAssignment = "Worship", LastAttendance = "", Status = "INACTIVE" },
+new ChurchMember { FirstName = "Barbara", LastName = "Jackson", PhoneNumber = "555-0112", Email = "barbara.jackson@email.com", JoinDate = new DateTime(2023, 3, 18), MinistryAssignment = "Youth", LastAttendance = "Dec 24, 2025", Status = "ACTIVE" },
+new ChurchMember { FirstName = "Charles", LastName = "White", PhoneNumber = "555-0113", Email = "charles.white@email.com", JoinDate = new DateTime(2019, 12, 8), MinistryAssignment = "Outreach", LastAttendance = "Dec 26, 2025", Status = "ACTIVE" },
+new ChurchMember { FirstName = "Susan", LastName = "Harris", PhoneNumber = "555-0114", Email = "susan.harris@email.com", JoinDate = new DateTime(2023, 6, 19), MinistryAssignment = "", LastAttendance = "Dec 24, 2025", Status = "VISITOR" },
+new ChurchMember { FirstName = "Christopher", LastName = "Martin", PhoneNumber = "555-0115", Email = "christopher.martin@email.com", JoinDate = new DateTime(2021, 2, 7), MinistryAssignment = "Teaching", LastAttendance = "Dec 24, 2025", Status = "ACTIVE" }
+};
+
+filteredMembers = new List<ChurchMember>(members);
+await base.OnInitializedAsync();
+}
+
+private void OpenRegisterModal()
+{
+    showRegisterModal = true;
+    newMember = new();
+    registerMessage = "";
+    registerSuccess = false;
+}
+
+private void CloseRegisterModal()
+{
+    showRegisterModal = false;
+    newMember = new();
+    registerMessage = "";
+    registerSuccess = false;
+}
+
+private void HandleRegisterSubmit()
+{
+    if (string.IsNullOrWhiteSpace(newMember.FirstName) || 
+        string.IsNullOrWhiteSpace(newMember.LastName) ||
+        string.IsNullOrWhiteSpace(newMember.Email) ||
+        string.IsNullOrWhiteSpace(newMember.PhoneNumber) ||
+        newMember.JoinDate == null ||
+        string.IsNullOrWhiteSpace(newMember.Status))
+    {
+        registerMessage = "Please fill in all required fields.";
+        registerSuccess = false;
+        return;
+    }
+
+    // Add the new member to the list
+    members.Add(newMember);
+    ApplyFilters();
+
+    registerMessage = $"Successfully registered {newMember.FirstName} {newMember.LastName}!";
+    registerSuccess = true;
+
+    // Close modal after 2 seconds
+    Task.Delay(2000).ContinueWith(_ => 
+    {
+        CloseRegisterModal();
+        StateHasChanged();
+    });
+}
+
+protected override async Task OnAfterRenderAsync(bool firstRender)
+{
+if (firstRender)
+{
+try
+{
+radzenAvailable = await Js.InvokeAsync<bool>("hasRadzenOpenChartTooltip");
+}
+catch
+{
+radzenAvailable = false;
+}
+
+if (!radzenAvailable)
+{
+await Js.InvokeVoidAsync("eval",
+"if(!window.Radzen) window.Radzen = {}; if(typeof window.Radzen.openChartTooltip !== 'function'){ window.Radzen.openChartTooltip = function(){return null;} }");
+}
+
+StateHasChanged();
+}
+}
+
+private void ApplyFilters()
+{
+filteredMembers = members.Where(m =>
+(string.IsNullOrEmpty(search) ||
+m.FirstName.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+m.LastName.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+m.Email.Contains(search, StringComparison.OrdinalIgnoreCase)) &&
+(string.IsNullOrEmpty(selectedMinistry) || m.MinistryAssignment == selectedMinistry) &&
+(string.IsNullOrEmpty(selectedStatus) || m.Status == selectedStatus)
+).ToList();
+}
+
+private void OnMinistryChanged(ChangeEventArgs e)
+{
+selectedMinistry = e.Value?.ToString() ?? "";
+ApplyFilters();
+}
+
+private void OnStatusChanged(ChangeEventArgs e)
+{
+selectedStatus = e.Value?.ToString() ?? "";
+ApplyFilters();
+}
+
+private string GetStatusClass(string status)
+{
+return status?.ToLower() switch
+{
+"active" => "active",
+"inactive" => "inactive",
+"visitor" => "visitor",
+_ => ""
+};
+}
+
+private List<AttendanceData> GetAttendanceData()
+{
+return new List<AttendanceData>
+{
+new AttendanceData { Month = "January", Count = 85 },
+new AttendanceData { Month = "February", Count = 78 },
+new AttendanceData { Month = "March", Count = 92 },
+new AttendanceData { Month = "April", Count = 88 },
+new AttendanceData { Month = "May", Count = 95 },
+new AttendanceData { Month = "June", Count = 102 },
+new AttendanceData { Month = "July", Count = 98 },
+new AttendanceData { Month = "August", Count = 105 },
+new AttendanceData { Month = "September", Count = 110 },
+new AttendanceData { Month = "October", Count = 115 },
+new AttendanceData { Month = "November", Count = 118 },
+new AttendanceData { Month = "December", Count = 122 }
+};
+}
+
+private string GetAttendanceSubtitle()
+{
+return "Tracking church member attendance throughout the year";
+}
+
+public class ChurchMember
+{
+public string FirstName { get; set; }
+public string LastName { get; set; }
+public string PhoneNumber { get; set; }
+public string Email { get; set; }
+public DateTime? JoinDate { get; set; }
+public string MinistryAssignment { get; set; }
+public string LastAttendance { get; set; }
+public string Status { get; set; }
+}
+
+public class AttendanceData
+{
+public string Month { get; set; }
+public int Count { get; set; }
+}
+}

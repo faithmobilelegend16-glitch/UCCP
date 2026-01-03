@@ -1,0 +1,362 @@
+body {
+    background-color: #111;
+    color: black;
+    font-family: 'Poppins', sans-serif;
+    overflow-x: hidden;
+}
+
+.row {
+    margin-left: 0;
+    margin-right: 0;
+    padding-left: 20px;
+    padding-right: 20px;
+}
+
+.account {
+    border: 1px solid #e0e0e0;
+    padding: 10px;
+    background-color: white;
+    border-radius: 10px;
+    padding-bottom: 25px;
+}
+
+.account2 {
+    border: 1px solid #e0e0e0;
+    padding-top: 10px;
+    background-color: white;
+    border-radius: 10px;
+    padding-bottom: 25px;
+    padding-left: 35px;
+    padding-right: 35px;
+}
+
+.account-head {
+    display: flex;
+    padding-left: 10px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+.account-head .i {
+    font-size: 23px;
+}
+
+.account-head h2 {
+    font-size: 18px;
+    margin-left: 5px;
+    font-weight: bold;
+}
+
+.card-dashboard {
+    border: 1px solid #e0e0e0;
+    background: #fff;
+    border-radius: 12px;
+    padding: 15px;
+}
+
+.card-dashboard:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+}
+
+.account-inside {
+    border-radius: 12px;
+}
+
+.account-inside:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+}
+
+.card-dashboard2 {
+    border: 1px solid #e0e0e0;
+    background: #fff;
+    border-radius: 12px 12px 0px 0px;
+    padding: 15px;
+    padding-bottom: 7px;
+    border-bottom: none;
+}
+
+.total-balance {
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.total-balance p {
+    font-size: 13px;
+}
+
+.total-balance h2 {
+    font-size: 25px;
+    font-weight: 600;
+    color:green;
+}
+
+.account-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+}
+
+.account-item:last-child {
+    border-bottom: none;
+}
+
+.account-item2 {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+}
+
+.account-item2:last-child {
+    border-bottom: none;
+}
+
+.account-icon {
+    width: 35px;
+    height: 35px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    margin-right: 12px;
+    background-color: #cacaca74;
+}
+
+.account-icon2 {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    margin-right: 12px;
+    background-color: #cacaca74;
+}
+
+.account-info h6 {
+    margin: 0;
+    margin-bottom: -3px;
+    font-size: 0.95rem;
+}
+
+.account-info small {
+    margin: 0;
+    margin-top: -3px;
+    color: gray;
+    font-weight: lighter;
+}
+
+.account-info2 h6 {
+    margin: 0;
+    margin-bottom: -3px;
+    margin-top: 2px;
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+.account-info2 small {
+    margin: 0;
+    margin-top: -3px;
+    color: gray;
+    font-weight: lighter;
+}
+
+.account-balance {
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.account-balance2 {
+    font-weight: 600;
+    font-size: 13px;
+    color: green;
+}
+
+.account-balance3 {
+    font-weight: 600;
+    font-size: 13px;
+    color: red;
+}
+
+.account-balance3 {
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.btn-action {
+    border-radius: 12px;
+    font-weight: 500;
+    width: 100%; /* makes it responsive */
+    background-color: #16a34a;
+    color: white;
+    height: 35px;
+}
+
+.btn-action:hover {
+    background-color: green;
+    color: white;
+}
+
+.btn-action2 {
+    border-radius: 12px;
+    font-weight: 500;
+    width: 100%; /* makes it responsive */
+    background-color: #16a34a;
+    color: white;
+    height: 35px;
+    font-size: 13px;
+}
+
+.btn-action2:hover {
+    background-color: green;
+    color:white;
+}
+
+.pad-right {
+    margin-right: 8px;
+}
+
+.recent-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.recent-act {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    margin-top: 5px;
+}
+
+.recent-header p,
+.recent-header h6 {
+    margin: 0; /* remove default spacing */
+}
+
+.recent-header p {
+    font-weight: lighter;
+    font-size: 13px;
+}
+
+.recent-header h6 {
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.dashboard-inside {
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+.view-all {
+    border: 1px solid #e0e0e0;
+    padding: 10px;
+    border-radius: 0px 0px 12px 12px;
+}
+
+.header-top {
+    background-color: white;
+    color: black;
+    padding-right: 20px;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 15px;
+    padding-bottom: 15px;
+}
+
+.dashboard-label {
+    font-size: 20px;
+    font-weight: bold;
+    font-family: 'Poppins', sans-serif;
+}
+
+.goal-card {
+    flex: 1; /* all cards take equal width */
+    min-width: 0; /* prevents overflow */
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    transition: transform 0.2s ease;
+    border: 1px solid #808080aa;
+}
+
+.goal-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+}
+
+.status-badge {
+    font-size: 0.8rem;
+    padding: 5px 10px;
+    border-radius: 20px;
+}
+
+.progress {
+    background: #ccc;
+    height: 6px;
+    border-radius: 4px;
+}
+
+.progress-bar {
+    background: #000;
+    border-radius: 4px;
+}
+
+.target {
+    font-weight: bold;
+    font-size: 1.1rem;
+    margin-top: 10px;
+    padding-top: 10px;
+}
+
+.view-details {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 15px;
+    font-weight: 500;
+    font-size: 0.9rem;
+    color: #bbb;
+    cursor: pointer;
+}
+
+.view-details:hover {
+    color: black;
+}
+.
+.upcoming {
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+.container.d-flex {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px; /* space between cards */
+}
+
+.goal-card h5 {
+    font-size: 18px;
+    font-weight: bold;
+    padding: 0;
+    margin: 0;
+}
+
+.goal-card p {
+    font-size: 15px;
+    font-weight: lighter;
+    margin: 0;
+}
+
+.font15 {
+    font-size: 15px;
+}

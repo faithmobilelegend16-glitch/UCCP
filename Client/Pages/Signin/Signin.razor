@@ -1,0 +1,734 @@
+﻿@page "/"
+@using System.Security.Claims
+@using Blazored.LocalStorage
+
+@layout NoLayout
+
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: 'Georgia', 'Garamond', serif;
+        min-height: 100vh;
+        background: linear-gradient(135deg, #0f3a66 0%, #1a5a7f 25%, #2d1b4e 50%, #1a3a5a 75%, #0f3a66 100%);
+        position: relative;
+        overflow: hidden;
+    }
+
+    body::before {
+        content: '';
+        position: absolute;
+        width: 800px;
+        height: 800px;
+        background: radial-gradient(circle, rgba(100, 200, 255, 0.08) 0%, transparent 70%);
+        border-radius: 50%;
+        top: -300px;
+        left: -200px;
+        animation: float 20s ease-in-out infinite;
+    }
+
+    body::after {
+        content: '';
+        position: absolute;
+        width: 600px;
+        height: 600px;
+        background: radial-gradient(circle, rgba(147, 112, 219, 0.06) 0%, transparent 70%);
+        border-radius: 50%;
+        bottom: -200px;
+        right: -150px;
+        animation: float 25s ease-in-out infinite reverse;
+    }
+
+    @@keyframes float {
+         0%, 100% { transform: translateY(0px); }
+         50% { transform: translateY(40px); }
+     }
+
+    .page-container {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .signin-container {
+        width: 100%;
+        max-width: 1200px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 60px;
+    }
+
+    .left-section {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        color: #f5e6d3;
+    }
+
+    .left-section h1 {
+        font-size: 48px;
+        font-weight: 700;
+        margin-bottom: 20px;
+        line-height: 1.2;
+        letter-spacing: 1px;
+        background: linear-gradient(135deg, #64c8ff 0%, #a78bfa 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .left-section p {
+        font-size: 16px;
+        color: rgba(200, 220, 255, 0.9);
+        margin-bottom: 50px;
+        line-height: 1.8;
+        font-style: italic;
+    }
+
+    .contact-info {
+        display: flex;
+        flex-direction: column;
+        gap: 30px;
+    }
+
+    .contact-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 16px;
+    }
+
+    .contact-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: rgba(100, 200, 255, 0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        flex-shrink: 0;
+        transition: all 0.3s ease;
+        border: 2px solid rgba(100, 200, 255, 0.5);
+    }
+
+    .contact-item:hover .contact-icon {
+        background: rgba(147, 112, 219, 0.3);
+        transform: translateY(-3px);
+        border-color: rgba(147, 112, 219, 0.8);
+        box-shadow: 0 8px 25px rgba(147, 112, 219, 0.3);
+    }
+
+    .contact-content h3 {
+        font-size: 12px;
+        font-weight: 700;
+        margin-bottom: 6px;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        color: #64c8ff;
+    }
+
+    .contact-content p {
+        font-size: 15px;
+        color: rgba(245, 230, 211, 0.8);
+        margin: 0;
+    }
+
+    .form-card {
+        background: rgba(255, 255, 255, 0.98);
+        backdrop-filter: blur(20px);
+        border-radius: 20px;
+        padding: 50px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3),
+        0 0 40px rgba(100, 200, 255, 0.15),
+        inset 0 1px 1px rgba(255, 255, 255, 0.5);
+        border: 2px solid rgba(100, 200, 255, 0.3);
+        animation: slideInRight 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+        position: relative;
+    }
+
+    @@keyframes slideInRight {
+         from {
+             opacity: 0;
+             transform: translateX(50px);
+         }
+         to {
+             opacity: 1;
+             transform: translateX(0);
+         }
+     }
+
+    .header {
+        text-align: center;
+        margin-bottom: 35px;
+        padding-bottom: 30px;
+        border-bottom: 2px solid rgba(218, 165, 32, 0.2);
+    }
+
+    .logo {
+        width: 80px;
+        height: 80px;
+        margin-bottom: 15px;
+        display: inline-block;
+        animation: glow 2.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
+        filter: drop-shadow(0 5px 15px rgba(218, 165, 32, 0.15));
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: center;
+    }
+
+    @@keyframes glow {
+         0%, 100% { transform: scale(1); opacity: 1; }
+         50% { transform: scale(1.08); opacity: 0.95; }
+     }
+
+    .header h2 {
+        font-size: 28px;
+        margin-bottom: 6px;
+        font-weight: 700;
+        letter-spacing: 1px;
+        color: #3d2817;
+    }
+
+    .header p {
+        color: #9b8b7e;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        font-style: italic;
+    }
+
+    .success-message, .error-message-global {
+        padding: 14px 16px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        font-size: 13px;
+        font-weight: 600;
+        text-align: center;
+        display: none;
+        animation: slideDown 0.4s ease-out;
+    }
+
+    @@keyframes slideDown {
+         from {
+             opacity: 0;
+             transform: translateY(-15px);
+         }
+         to {
+             opacity: 1;
+             transform: translateY(0);
+         }
+     }
+
+    .success-message {
+        background: #d4edda;
+        border: 1px solid #81c784;
+        color: #1b5e20;
+    }
+
+    .success-message.show {
+        display: block;
+    }
+
+    .error-message-global {
+        background: #ffe6e6;
+        border: 1px solid #e57373;
+        color: #b71c1c;
+    }
+
+    .error-message-global.show {
+        display: block;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+        animation: fadeIn 0.6s ease-out;
+    }
+
+    .form-group.hidden {
+        display: none;
+    }
+
+    @@keyframes fadeIn {
+         from { opacity: 0; }
+         to { opacity: 1; }
+     }
+
+    label {
+        display: block;
+        color: #3d2817;
+        font-size: 12px;
+        font-weight: 700;
+        margin-bottom: 8px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+    }
+
+    .input-wrapper {
+        position: relative;
+    }
+
+    input {
+        width: 100%;
+        padding: 14px 48px 14px 16px;
+        border: 2px solid #e8dcc8;
+        border-radius: 8px;
+        font-size: 14px;
+        background: #faf7f2;
+        color: #3d2817;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    input:focus {
+        outline: none;
+        border-color: #daa520;
+        box-shadow: 0 0 0 4px rgba(218, 165, 32, 0.1);
+        background: #ffffff;
+    }
+
+    input::placeholder {
+        color: #b8a794;
+    }
+
+    .toggle-password {
+        position: absolute;
+        right: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        transition: transform 0.2s ease;
+        color: #9b8b7e;
+    }
+
+    .toggle-password:hover {
+        color: #daa520;
+    }
+
+    .toggle-password:active {
+        transform: translateY(-50%) scale(1.15);
+    }
+
+    .submit-btn {
+        width: 100%;
+        padding: 14px;
+        background: linear-gradient(135deg, #daa520 0%, #b8860b 100%);
+        color: #ffffff;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: 1px;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        box-shadow: 0 10px 25px rgba(218, 165, 32, 0.2);
+        text-transform: uppercase;
+        margin-bottom: 20px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .submit-btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
+        transition: left 0.5s ease;
+    }
+
+    .submit-btn:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 15px 35px rgba(218, 165, 32, 0.3);
+    }
+
+    .submit-btn:hover:not(:disabled)::before {
+        left: 100%;
+    }
+
+    .submit-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .toggle-form {
+        text-align: center;
+        padding-top: 16px;
+        border-top: 2px solid rgba(218, 165, 32, 0.1);
+    }
+
+    .toggle-form span {
+        color: #9b8b7e;
+        font-size: 13px;
+        font-weight: 600;
+        display: block;
+        margin-bottom: 10px;
+    }
+
+    .toggle-form button {
+        background: none;
+        border: none;
+        color: #daa520;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        position: relative;
+    }
+
+    .toggle-form button::after {
+        content: '';
+        position: absolute;
+        bottom: -4px;
+        left: 0;
+        width: 0;
+        height: 2px;
+        background: #daa520;
+        transition: width 0.3s ease;
+    }
+
+    .toggle-form button:hover {
+        color: #b8860b;
+    }
+
+    .toggle-form button:hover::after {
+        width: 100%;
+    }
+
+    @@media (max-width: 1024px) {
+        .signin-container {
+            grid-template-columns: 1fr;
+            gap: 40px;
+        }
+
+        .left-section h1 {
+            font-size: 36px;
+        }
+
+        .left-section p {
+            font-size: 15px;
+        }
+
+        .form-card {
+            padding: 40px 30px;
+        }
+    }
+
+    @@media (max-width: 480px) {
+        .form-card {
+            padding: 30px 20px;
+        }
+
+        .header h2 {
+            font-size: 24px;
+        }
+
+        .submit-btn {
+            padding: 12px;
+            font-size: 13px;
+        }
+
+        .left-section h1 {
+            font-size: 28px;
+        }
+    }
+</style>
+
+<div class="page-container">
+    <div class="signin-container">
+        <div class="left-section">
+            <h1>@(isLogin ? "Welcome Home" : "Join Our Congregation")</h1>
+            <p>@(isLogin ? "Faith, Fellowship & Community" : "Begin Your Spiritual Journey")</p>
+
+            <div class="contact-info">
+                <div class="contact-item">
+                    <div class="contact-icon">☎️</div>
+                    <div class="contact-content">
+                        <h3>Call Us</h3>
+                        <p>+6399 2335 2033</p>
+                    </div>
+                </div>
+
+                <div class="contact-item">
+                    <div class="contact-icon">✉️</div>
+                    <div class="contact-content">
+                        <h3>Email</h3>
+                        <p>uccp@gmail.com</p>
+                    </div>
+                </div>
+
+                <div class="contact-item">
+                    <div class="contact-icon">📍</div>
+                    <div class="contact-content">
+                        <h3>Visit Us</h3>
+                        <p>Purok-8, Patin-ay, Prosperidad Agusan del sur</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-card">
+            <div class="header">
+                <div class="logo" style="background-image: url('UCCP_image.png');"></div>
+                <h2>@(isLogin ? "Welcome" : "Join Us")</h2>
+                <p>@(isLogin ? "Faith, Fellowship & Community" : "Begin Your Spiritual Journey")</p>
+            </div>
+
+            <div class="success-message @(string.IsNullOrEmpty(SuccessMessage) ? "" : "show")">
+                @SuccessMessage
+            </div>
+
+            <div class="error-message-global @(string.IsNullOrEmpty(ErrorMessage) ? "" : "show")">
+                @ErrorMessage
+            </div>
+
+            <div class="form-group @(isLogin ? "hidden" : "")">
+                <label>👤 Full Name</label>
+                <div class="input-wrapper">
+                    <input type="text" @bind="FullName" placeholder="Your name"/>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>✉️ Email Address</label>
+                <div class="input-wrapper">
+                    <input type="email" @bind="Email" placeholder="you@example.com"/>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>🔐 Password</label>
+                <div class="input-wrapper">
+                    <input type="@PasswordInputType" @bind="Password" placeholder="••••••••"/>
+                    <button class="toggle-password" @onclick="TogglePassword" type="button">👁</button>
+                </div>
+            </div>
+
+            <div class="form-group @(isLogin ? "hidden" : "")">
+                <label>✓ Confirm Password</label>
+                <div class="input-wrapper">
+                    <input type="@PasswordInputType" @bind="ConfirmPassword" placeholder="••••••••"/>
+                </div>
+            </div>
+
+            <button class="submit-btn" @onclick="Submit" disabled="@IsLoading">
+                @(isLogin ? "Sign In" : "Create Account")
+            </button>
+
+            <div class="toggle-form">
+                @if (isLogin)
+                {
+                <span>Don't have an account?</span>
+                <button @onclick="ToggleForm" type="button">Sign Up</button>
+                }
+                else
+                {
+                <span>Already have an account?</span>
+                <button @onclick="ToggleForm" type="button">Sign In</button>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+
+[Inject] private ILocalStorageService LocalStorage { get; set; }
+
+private bool isLogin = true;
+private bool IsLoading = false;
+private bool PasswordVisible = false;
+
+private string FullName { get; set; } = "";
+private string Email { get; set; } = "";
+private string Password { get; set; } = "";
+private string ConfirmPassword { get; set; } = "";
+
+private string SuccessMessage { get; set; } = "";
+private string ErrorMessage { get; set; } = "";
+
+private string PasswordInputType => PasswordVisible ? "text" : "password";
+
+private void TogglePassword()
+{
+PasswordVisible = !PasswordVisible;
+}
+
+private async Task ToggleForm()
+{
+isLogin = !isLogin;
+ClearMessages();
+ClearFields();
+}
+
+private void ClearFields()
+{
+FullName = "";
+Email = "";
+Password = "";
+ConfirmPassword = "";
+}
+
+private void ClearMessages()
+{
+SuccessMessage = "";
+ErrorMessage = "";
+}
+
+private async Task Submit()
+{
+ClearMessages();
+
+if (!Validate())
+return;
+
+IsLoading = true;
+
+try
+{
+if (isLogin)
+await Logins();
+else
+await Signup();
+}
+finally
+{
+IsLoading = false;
+}
+}
+
+private bool Validate()
+{
+if (string.IsNullOrWhiteSpace(Email))
+{
+ErrorMessage = "Email is required";
+return false;
+}
+
+if (string.IsNullOrWhiteSpace(Password))
+{
+ErrorMessage = "Password is required";
+return false;
+}
+
+if (!isLogin)
+{
+if (string.IsNullOrWhiteSpace(FullName))
+{
+ErrorMessage = "Name is required";
+return false;
+}
+
+if (Password != ConfirmPassword)
+{
+ErrorMessage = "Passwords do not match";
+return false;
+}
+}
+
+return true;
+}
+
+private async Task Logins()
+{
+try
+{
+var request = new { Email, Password };
+var response = await Http.PostAsJsonAsync("api/auth/signin", request);
+
+if (response.IsSuccessStatusCode)
+{
+var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
+
+if (result != null)
+{
+// Store token in local storage
+await LocalStorage.SetItemAsync("authToken", result.Token);
+
+// Optionally store user info
+await LocalStorage.SetItemAsync("userRole", result.User.Role);
+
+SuccessMessage = "Welcome back to our church family! ✝️";
+
+// Redirect based on role
+if (result.User.Role == "Admin")
+Navigation.NavigateTo("/dashboard");
+else
+Navigation.NavigateTo("/dashboard");
+}
+}
+else
+{
+ErrorMessage = "Sign in failed. Please check your credentials.";
+}
+}
+catch (Exception ex)
+{
+ErrorMessage = "Sign in failed. Please check your connection.";
+Console.WriteLine($"Login error: {ex.Message}");
+}
+}
+
+private async Task Signup()
+{
+try
+{
+var request = new { FullName, Email, Password };
+var response = await Http.PostAsJsonAsync("api/auth/signup", request);
+
+if (response.IsSuccessStatusCode)
+{
+SuccessMessage = "Account created! Welcome to our congregation! ✝️";
+ClearFields();
+await Task.Delay(1500);
+isLogin = true;
+}
+else
+{
+var error = await response.Content.ReadAsStringAsync();
+ErrorMessage = $"Sign up failed: {error}";
+}
+}
+catch (Exception ex)
+{
+ErrorMessage = "Sign up failed. Please check your connection.";
+Console.WriteLine($"Signup error: {ex.Message}");
+}
+}
+
+// Response model for login
+public class LoginResponse
+{
+public string Message { get; set; } = "";
+public string Token { get; set; } = "";
+public UserInfo User { get; set; } = new UserInfo();
+}
+
+public class UserInfo
+{
+public string Id { get; set; } = "";
+public string FullName { get; set; } = "";
+public string Email { get; set; } = "";
+public string Role { get; set; } = "";
+}
+}

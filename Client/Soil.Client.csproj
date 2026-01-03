@@ -1,0 +1,53 @@
+<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+	  <!-- REQUIRED for GitHub Pages subfolder -->
+	  <BaseHref>/UCCP/</BaseHref>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Blazored.LocalStorage" Version="4.5.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="7.0.20" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="7.0.20" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="7.0.20" PrivateAssets="all" />
+    <PackageReference Include="MongoDB.Driver" Version="3.4.0" />
+    <PackageReference Include="Radzen.Blazor" Version="6.3.0" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.15.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Shared\Soil.Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="wwwroot\image\" />
+    <Folder Include="wwwroot\vendor\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <_ContentIncludedByDefault Remove="wwwroot\js\BarcodeScanner\lib\handwritten\handwritten.css" />
+    <_ContentIncludedByDefault Remove="wwwroot\js\BarcodeScanner\lib\handwritten\handwritten.js" />
+    <_ContentIncludedByDefault Remove="wwwroot\js\BarcodeScanner\lib\viewerjs\viewer.min.css" />
+    <_ContentIncludedByDefault Remove="wwwroot\js\BarcodeScanner\lib\viewerjs\viewer.min.js" />
+    <_ContentIncludedByDefault Remove="wwwroot\js\BarcodeScanner\lib\viewerjs\viewerjs.js" />
+    <_ContentIncludedByDefault Remove="wwwroot\js\BarcodeScanner\lib\zxing\qrcode.min.js" />
+    <_ContentIncludedByDefault Remove="wwwroot\js\BarcodeScanner\lib\zxing\zxing.min.js" />
+    <_ContentIncludedByDefault Remove="wwwroot\js\BarcodeScanner\lib\zxing\zxingjs1.1.js" />
+    <_ContentIncludedByDefault Remove="wwwroot\js\BarcodeScanner\lib\zxing\zxingjs1.2.js" />
+    <_ContentIncludedByDefault Remove="Pages\Analytics\Analytics.razor" />
+    <_ContentIncludedByDefault Remove="Pages\Qrcode\DataValidator.razor" />
+    <_ContentIncludedByDefault Remove="Pages\Qrcode\QRScanner.razor" />
+    <_ContentIncludedByDefault Remove="Pages\QrCodeScanner\DataValidator.razor" />
+    <_ContentIncludedByDefault Remove="Pages\QrCodeScanner\Form.razor" />
+    <_ContentIncludedByDefault Remove="Pages\QrCodeScanner\Laboratory.razor" />
+    <_ContentIncludedByDefault Remove="Pages\QrCodeScanner\QrCodeFrom.razor" />
+    <_ContentIncludedByDefault Remove="Pages\Request\PurchaseDialog.razor" />
+    <_ContentIncludedByDefault Remove="Pages\Request\Request.razor" />
+    <_ContentIncludedByDefault Remove="Pages\Tracking\Tracking.razor" />
+    <_ContentIncludedByDefault Remove="Pages\Tracking\TrackingDialog.razor" />
+  </ItemGroup>
+
+</Project>

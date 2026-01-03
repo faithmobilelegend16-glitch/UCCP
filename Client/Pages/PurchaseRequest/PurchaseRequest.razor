@@ -1,0 +1,276 @@
+﻿@page "/purchase-request"
+@using Soil.Shared.Models.SaleModel
+@using Soil.Shared.Models.PurchaseRequests
+@inject HttpClient Http
+@inject DialogService DialogService
+
+<RadzenStack Orientation="Orientation.Vertical" Gap="1rem" Class="rz-p-4">
+
+    <RadzenStack Orientation="Orientation.Horizontal" Gap="1rem">
+        <RadzenButton Text="Add Sale" Icon="add" ButtonStyle="ButtonStyle.Success" Click="@OpenCreateSale" />
+        <RadzenButton Text="Add PR" Icon="add" ButtonStyle="ButtonStyle.Success" Click="@OpenCreatePR" />
+    </RadzenStack>
+
+    @* === SALES FORM === *@
+    @if (ShowSaleForm)
+    {
+        <RadzenCard Class="rz-mb-4">
+            <RadzenStack Orientation="Orientation.Vertical" Gap="1rem">
+                <RadzenText TextStyle="TextStyle.H5">@((IsEditSale ? "Edit Sale" : "Add New Sale"))</RadzenText>
+
+                <RadzenRow>
+                    <RadzenColumn Size="6">
+                        <RadzenLabel Text="Product Name" />
+                        <RadzenTextBox @bind-Value="CurrentSale.ProductName" Style="width:100%" />
+                    </RadzenColumn>
+                    <RadzenColumn Size="3">
+                        <RadzenLabel Text="Quantity" />
+                        <RadzenNumeric @bind-Value="CurrentSale.Quantity" TValue="int" Min="0" Style="width:100%" />
+                    </RadzenColumn>
+                    <RadzenColumn Size="3">
+                        <RadzenLabel Text="Amount" />
+                        <RadzenNumeric @bind-Value="CurrentSale.Amount" TValue="decimal" Min="0" Style="width:100%" />
+                    </RadzenColumn>
+                </RadzenRow>
+
+                <RadzenRow>
+                    <RadzenColumn Size="6">
+                        <RadzenLabel Text="Category" />
+                        <RadzenTextBox @bind-Value="CurrentSale.Category" Style="width:100%" />
+                    </RadzenColumn>
+                    <RadzenColumn Size="6">
+                        <RadzenLabel Text="Description" />
+                        <RadzenTextBox @bind-Value="CurrentSale.Description" Style="width:100%" />
+                    </RadzenColumn>
+                </RadzenRow>
+
+                <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="1rem">
+                    <RadzenButton ButtonStyle="ButtonStyle.Light" Text="Cancel" Click="@CancelSaleForm" />
+                    <RadzenButton ButtonStyle="ButtonStyle.Success" Text="@(IsEditSale ? "Update" : "Save")" Click="@SaveSale" />
+                </RadzenStack>
+            </RadzenStack>
+        </RadzenCard>
+    }
+
+    @* === PR FORM === *@
+    @if (ShowPRForm)
+    {
+        <RadzenCard Class="rz-mb-4">
+            <RadzenStack Orientation="Orientation.Vertical" Gap="1rem">
+                <RadzenText TextStyle="TextStyle.H5">@((IsEditPR ? "Edit PR" : "Add New PR"))</RadzenText>
+
+                <RadzenRow>
+                    <RadzenColumn Size="3">
+                        <RadzenLabel Text="Black Pearl" />
+                        <RadzenNumeric @bind-Value="CurrentPR.BlackPearl" TValue="int" Min="0" Style="width:100%" Change="@(args => RecalculateTotal())" />
+                    </RadzenColumn>
+                    <RadzenColumn Size="3">
+                        <RadzenLabel Text="Powder Flavor" />
+                        <RadzenNumeric @bind-Value="CurrentPR.PowderFlavor" TValue="int" Min="0" Style="width:100%" Change="@(args => RecalculateTotal())" />
+                    </RadzenColumn>
+                    <RadzenColumn Size="3">
+                        <RadzenLabel Text="Cup Small" />
+                        <RadzenNumeric @bind-Value="CurrentPR.CupSmall" TValue="int" Min="0" Style="width:100%" Change="@(args => RecalculateTotal())" />
+                    </RadzenColumn>
+                    <RadzenColumn Size="3">
+                        <RadzenLabel Text="Cup Medium" />
+                        <RadzenNumeric @bind-Value="CurrentPR.CupMedium" TValue="int" Min="0" Style="width:100%" Change="@(args => RecalculateTotal())" />
+                    </RadzenColumn>
+                </RadzenRow>
+
+                <RadzenRow>
+                    <RadzenColumn Size="3">
+                        <RadzenLabel Text="Cup Large" />
+                        <RadzenNumeric @bind-Value="CurrentPR.CupLarge" TValue="int" Min="0" Style="width:100%" Change="@(args => RecalculateTotal())" />
+                    </RadzenColumn>
+                    <RadzenColumn Size="3">
+                        <RadzenLabel Text="Straw" />
+                        <RadzenNumeric @bind-Value="CurrentPR.Straw" TValue="int" Min="0" Style="width:100%" Change="@(args => RecalculateTotal())" />
+                    </RadzenColumn>
+                    <RadzenColumn Size="3">
+                        <RadzenLabel Text="Ice" />
+                        <RadzenNumeric @bind-Value="CurrentPR.Ice" TValue="int" Min="0" Style="width:100%" Change="@(args => RecalculateTotal())" />
+                    </RadzenColumn>
+                    <RadzenColumn Size="3">
+                        <RadzenLabel Text="Water (Gallon)" />
+                        <RadzenNumeric @bind-Value="CurrentPR.WaterGallon" TValue="int" Min="0" Style="width:100%" Change="@(args => RecalculateTotal())" />
+                    </RadzenColumn>
+                </RadzenRow>
+
+                <RadzenRow>
+                    <RadzenColumn Size="3">
+                        <RadzenLabel Text="Total Amount" />
+                        <RadzenNumeric Value="CurrentPR.TotalAmount" TValue="decimal" Disabled="true" Style="width:100%" />
+                    </RadzenColumn>
+                </RadzenRow>
+
+                <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="1rem">
+                    <RadzenButton ButtonStyle="ButtonStyle.Light" Text="Cancel" Click="@CancelPRForm" />
+                    <RadzenButton ButtonStyle="ButtonStyle.Success" Text="@(IsEditPR ? "Update" : "Save")" Click="@SavePR" />
+                </RadzenStack>
+            </RadzenStack>
+        </RadzenCard>
+    }
+
+    @* === DATA GRIDS === *@
+    <RadzenTabs>
+        <RadzenTabsItem Text="Sales">
+            <RadzenDataGrid TItem="Sale" Data="@Sales" Responsive="true">
+                <Columns>
+                    <RadzenDataGridColumn TItem="Sale" Property="ProductName" Title="Product Name" />
+                    <RadzenDataGridColumn TItem="Sale" Property="Quantity" Title="Quantity" />
+                    <RadzenDataGridColumn TItem="Sale" Property="Amount" Title="Amount" />
+                    <RadzenDataGridColumn TItem="Sale" Property="Category" Title="Category" />
+                    <RadzenDataGridColumn TItem="Sale" Property="Description" Title="Description" />
+                    <RadzenDataGridColumn TItem="Sale" Property="SaleDate" Title="Date" FormatString="{0:MM/dd/yyyy}" />
+                    <RadzenDataGridColumn TItem="Sale" Title="Actions">
+                        <Template Context="data">
+                            <RadzenButton ButtonStyle="ButtonStyle.Info" Icon="edit" Size="ButtonSize.Small" Click="@(() => EditSale(data))" />
+                            <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Size="ButtonSize.Small" Click="@(() => DeleteSale(data._id.ToString()))" />
+                        </Template>
+                    </RadzenDataGridColumn>
+                </Columns>
+            </RadzenDataGrid>
+        </RadzenTabsItem>
+
+        <RadzenTabsItem Text="Purchase Requests">
+            <RadzenDataGrid TItem="PrClass" Data="@PRs" Responsive="true">
+                <Columns>
+                    <RadzenDataGridColumn TItem="PrClass" Property="BlackPearl" Title="Black Pearl" />
+                    <RadzenDataGridColumn TItem="PrClass" Property="PowderFlavor" Title="Powder Flavor" />
+                    <RadzenDataGridColumn TItem="PrClass" Property="CupSmall" Title="Cup Small" />
+                    <RadzenDataGridColumn TItem="PrClass" Property="CupMedium" Title="Cup Medium" />
+                    <RadzenDataGridColumn TItem="PrClass" Property="CupLarge" Title="Cup Large" />
+                    <RadzenDataGridColumn TItem="PrClass" Property="Straw" Title="Straw" />
+                    <RadzenDataGridColumn TItem="PrClass" Property="Ice" Title="Ice" />
+                    <RadzenDataGridColumn TItem="PrClass" Property="WaterGallon" Title="Water (Gallon)" />
+                    <RadzenDataGridColumn TItem="PrClass" Property="TotalAmount" Title="Total Amount" />
+                    <RadzenDataGridColumn TItem="PrClass" Property="RequestDate" Title="Date" FormatString="{0:MM/dd/yyyy}" />
+                    <RadzenDataGridColumn TItem="PrClass" Title="Actions">
+                        <Template Context="data">
+                            <RadzenButton ButtonStyle="ButtonStyle.Info" Icon="edit" Size="ButtonSize.Small" Click="@(() => EditPR(data))" />
+                            <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Size="ButtonSize.Small" Click="@(() => DeletePR(data.Id))" />
+                        </Template>
+                    </RadzenDataGridColumn>
+                </Columns>
+            </RadzenDataGrid>
+        </RadzenTabsItem>
+    </RadzenTabs>
+</RadzenStack>
+
+@code {
+    private List<Sale> Sales = new();
+    private List<PrClass> PRs = new();
+    private Sale CurrentSale = new();
+    private PrClass CurrentPR = new();
+    private bool ShowSaleForm = false;
+    private bool ShowPRForm = false;
+    private bool IsEditSale = false;
+    private bool IsEditPR = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadSales();
+        await LoadPRs();
+    }
+
+    #region Sales Methods
+    private async Task LoadSales() => Sales = await Http.GetFromJsonAsync<List<Sale>>("api/sales");
+
+    private void OpenCreateSale()
+    {
+        CurrentSale = new Sale { SaleDate = DateTime.Now };
+        IsEditSale = false;
+        ShowSaleForm = true;
+    }
+
+    private void EditSale(Sale sale)
+    {
+        CurrentSale = sale;
+        IsEditSale = true;
+        ShowSaleForm = true;
+    }
+
+    private void CancelSaleForm()
+    {
+        ShowSaleForm = false;
+        CurrentSale = new Sale();
+        IsEditSale = false;
+    }
+
+    private async Task SaveSale()
+    {
+        if (IsEditSale)
+            await Http.PostAsJsonAsync("api/sales/savesale", CurrentSale);
+        else
+            await Http.PostAsJsonAsync("api/sales/savesale", CurrentSale);
+
+        ShowSaleForm = false;
+        await LoadSales();
+    }
+
+    private async Task DeleteSale(string id)
+    {
+        bool? confirmed = await DialogService.Confirm("Delete this sale?", "Confirm");
+        if (confirmed != true) return;
+
+        await Http.DeleteAsync($"api/sales/sale/{id}");
+        await LoadSales();
+    }
+    #endregion
+
+    #region PR Methods
+    private async Task LoadPRs() => PRs = await Http.GetFromJsonAsync<List<PrClass>>("api/sales/prs");
+
+    private void OpenCreatePR()
+    {
+        CurrentPR = new PrClass { RequestDate = DateTime.Now };
+        IsEditPR = false;
+        ShowPRForm = true;
+    }
+
+    private void EditPR(PrClass pr)
+    {
+        CurrentPR = pr;
+        IsEditPR = true;
+        ShowPRForm = true;
+    }
+
+    private void CancelPRForm()
+    {
+        ShowPRForm = false;
+        CurrentPR = new PrClass();
+        IsEditPR = false;
+    }
+
+    private void RecalculateTotal()
+    {
+        CurrentPR.TotalAmount =
+            CurrentPR.BlackPearl +
+            CurrentPR.PowderFlavor +
+            CurrentPR.CupSmall +
+            CurrentPR.CupMedium +
+            CurrentPR.CupLarge +
+            CurrentPR.Straw +
+            CurrentPR.Ice +
+            CurrentPR.WaterGallon;
+    }
+
+    private async Task SavePR()
+    {
+        RecalculateTotal();
+        await Http.PostAsJsonAsync("api/sales/savepr", CurrentPR);
+        ShowPRForm = false;
+        await LoadPRs();
+    }
+
+    private async Task DeletePR(string id)
+    {
+        bool? confirmed = await DialogService.Confirm("Delete this PR?", "Confirm");
+        if (confirmed != true) return;
+
+        await Http.DeleteAsync($"api/sales/pr/{id}");
+        await LoadPRs();
+    }
+    #endregion
+}

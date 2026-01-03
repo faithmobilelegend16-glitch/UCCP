@@ -1,0 +1,253 @@
+@page "/budget"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+
+
+
+<div class="row pb-4">
+    <div class="col-6 pe-3">
+        <div class="account">
+            <div class="account-head">
+                <i class="bi bi-wallet"></i>
+                <h2>Account</h2>
+            </div>
+            <div class="container">
+                <div class="card-dashboard">
+                    <div class="total-balance mb-3">
+                        <p class="mb-1">Total Balance</p>
+                        <h2>₱ 26,540.25</h2>
+                    </div>
+                    <p class="fw-bold mb-2">Your Accounts</p>
+                    <div class="account-item">
+                        <div class="d-flex align-items-center">
+                            <div class="account-icon bg-danger bg-opacity-25"><i class="bi bi-wallet"></i></div>
+                            <div class="account-info">
+                                <h6>Main Savings</h6>
+                                <small>Personal savings</small>
+                            </div>
+                        </div>
+                        <div class="account-balance">₱ 8,459.45</div>
+                    </div>
+
+                    <div class="account-item">
+                        <div class="d-flex align-items-center">
+                            <div class="account-icon bg-primary bg-opacity-25"><i class="bi bi-credit-card"></i></div>
+                            <div class="account-info">
+                                <h6>Checking Account</h6>
+                                <small>Daily expenses</small>
+                            </div>
+                        </div>
+                        <div class="account-balance">₱ 2,850.00</div>
+                    </div>
+
+                    <div class="account-item">
+                        <div class="d-flex align-items-center">
+                            <div class="account-icon bg-info bg-opacity-25"><i class="bi bi-bar-chart"></i></div>
+                            <div class="account-info">
+                                <h6>Investment Portfolio</h6>
+                                <small>Stock & ETFs</small>
+                            </div>
+                        </div>
+                        <div class="account-balance">₱ 15,230.80</div>
+                    </div>
+
+                    <div class="account-item">
+                        <div class="d-flex align-items-center">
+                            <div class="account-icon bg-warning bg-opacity-25"><i class="bi bi-credit-card-2-back"></i></div>
+                            <div class="account-info">
+                                <h6>Credit Card</h6>
+                                <small>Pending charges</small>
+                            </div>
+                        </div>
+                        <div class="account-balance">₱ 1,200.00</div>
+                    </div>
+
+                    <div class="account-item">
+                        <div class="d-flex align-items-center">
+                            <div class="account-icon bg-success bg-opacity-25"><i class="bi bi-piggy-bank"></i></div>
+                            <div class="account-info">
+                                <h6>Savings Account</h6>
+                                <small>Emergency fund</small>
+                            </div>
+                        </div>
+                        <div class="account-balance">₱ 3,000.00</div>
+                    </div>
+                    <div class="d-flex justify-content-between mt-3 gap-2">
+                        <button class="btn btn-light btn-sm btn-action">+  Add</button>
+                        <button class="btn btn-light btn-sm btn-action"><i class="bi bi-send pad-right"></i>Send</button>
+                        <button class="btn btn-light btn-sm btn-action"><i class="bi bi-arrow-down-left pad-right"></i>Top-up</button>
+                        <button class="btn btn-light btn-sm btn-action"><i class="bi bi-arrow-right pad-right"></i>More</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 ps-3">
+        <div class="account2">
+            <div class="account-head">
+                <i class="bi bi-wallet2"></i>
+                <h2>Recent Transactions</h2>
+            </div>
+            <div class="account-inside">
+                <div class="card-dashboard2">
+                    <!-- Total Balance -->
+                    <div class="recent-header d-flex justify-content-between align-items-center">
+                        <div class="recent-act d-flex align-items-center gap-2">
+                            <h6 class="mb-0">Recent Activity</h6>
+                            <p class="mb-0">(23 transactions)</p>
+                        </div>
+                        <p class="mb-0">This Month</p>
+                    </div>
+                    <div class="dashboard-inside">
+                        <div class="account-item2">
+                        <div class="d-flex align-items-center">
+                            <div class="account-icon2"><i class="bi bi-wallet"></i></div>
+                            <div class="account-info2">
+                                <h6>Main Savings</h6>
+                                <small>Personal savings</small>
+                            </div>
+                        </div>
+                        <div class="account-balance3">₱ 8,459.45 <i class="bi bi-arrow-up-right"></i></div>
+                    </div>
+
+                    <div class="account-item2">
+                        <div class="d-flex align-items-center">
+                            <div class="account-icon2"><i class="bi bi-wallet"></i></div>
+                            <div class="account-info2">
+                                <h6>Main Savings</h6>
+                                <small>Personal savings</small> 
+                            </div>
+                        </div>
+                        <div class="account-balance2">₱ 8,459.45 <i class="bi bi-arrow-down-left"></i></div>
+                    </div>
+
+                    <div class="account-item2">
+                        <div class="d-flex align-items-center">
+                            <div class="account-icon2"><i class="bi bi-wallet"></i></div>
+                            <div class="account-info2">
+                                <h6>Main Savings</h6>
+                                <small>Personal savings</small>
+                            </div>
+                        </div>
+                        <div class="account-balance3">₱ 8,459.45 <i class="bi bi-arrow-up-right"></i></div>
+                    </div>
+
+                    <div class="account-item2">
+                        <div class="d-flex align-items-center">
+                            <div class="account-icon2"><i class="bi bi-wallet"></i></div>
+                            <div class="account-info2">
+                                <h6>Main Savings</h6>
+                                <small>Personal savings</small>
+                            </div>
+                        </div>
+                        <div class="account-balance3">₱ 8,459.45 <i class="bi bi-arrow-up-right"></i></div>
+                    </div>
+
+                    <div class="account-item2">
+                        <div class="d-flex align-items-center">
+                            <div class="account-icon2"><i class="bi bi-wallet"></i></div>
+                            <div class="account-info2">
+                                <h6>Main Savings</h6>
+                                <small>Personal savings</small>
+                            </div>
+                        </div>
+                        <div class="account-balance3">₱ 8,459.45 <i class="bi bi-arrow-up-right"></i></div>
+                    </div>
+
+                    <div class="account-item2">
+                        <div class="d-flex align-items-center">
+                            <div class="account-icon2"><i class="bi bi-wallet"></i></div>
+                            <div class="account-info2">
+                                <h6>Main Savings</h6>
+                                <small>Personal savings</small>
+                            </div>
+                        </div>
+                        <div class="account-balance3">₱ 8,459.45 <i class="bi bi-arrow-up-right"></i></div>
+                    </div>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-center view-all">
+                    <button class="btn btn-light btn-sm btn-action2">View All Transaction</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col">
+        <div class="account pt-3 pb-3">
+            <div class="account-head">
+                <i class="bi bi-wallet"></i>
+                <h2>Account</h2>
+            </div>
+            <div class="container d-flex">
+                <div class="goal-card h-100">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <i class="bi bi-piggy-bank fs-4"></i>
+                        <span class="status-badge bg-primary text-light"><i class="bi bi-exclamation-circle"></i> In-progress</span>
+                    </div>
+                    <h5>Emergency Fund</h5>
+                    <p class="text-muted font15">3 months of expenses saved</p>
+                    <div class="d-flex justify-content-between">
+                        <small class="mt-2">Progress</small>
+                        <small>65%</small>
+                    </div>
+                    <div class="progress mb-2">
+                        <div class="progress-bar" role="progressbar" style="width: 65%"></div>
+                    </div>
+                    <p class="target">₱ 15,000 <span class="text-muted fw-normal">target</span></p>
+                    <p class="text-muted mb-0"><i class="bi bi-calendar"></i> Target: Dec 2024</p>
+                    <div class="view-details">
+                        <span>View Details</span>
+                        <i class="bi bi-arrow-right"></i>
+                    </div>
+                </div>
+
+                <div class="goal-card h-100">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <i class="bi bi-graph-up fs-4"></i>
+                        <span class="status-badge bg-warning text-light"><i class="bi bi-stopwatch"></i> Pending</span>
+                    </div>
+                    <h5>Stock Portfolio</h5>
+                    <p class="text-muted font15">Tech sector investment plan</p>
+                    <div class="d-flex justify-content-between">
+                        <small class="mt-2">Progress</small>
+                        <small>30%</small>
+                    </div>
+                    <div class="progress mb-2">
+                        <div class="progress-bar" role="progressbar" style="width: 30%"></div>
+                    </div>
+                    <p class="target">₱ 50,000 <span class="text-muted fw-normal">target</span></p>
+                    <p class="text-muted mb-0"><i class="bi bi-calendar"></i> Target: Jun 2024</p>
+                    <div class="view-details">
+                        <span>View Details</span>
+                        <i class="bi bi-arrow-right"></i>
+                    </div>
+                </div>
+
+                <div class="goal-card h-100">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <i class="bi bi-credit-card fs-4"></i>
+                        <span class="status-badge bg-primary text-light"><i class="bi bi-exclamation-circle"></i> In-progress</span>
+                    </div>
+                    <h5>Debt Repayment</h5>
+                    <p class="text-muted font15">Student loan payoff plan</p>
+                    <div class="d-flex justify-content-between">
+                        <small class="mt-2">Progress</small>
+                        <small>45%</small>
+                    </div>
+                    <div class="progress mb-2">
+                        <div class="progress-bar" role="progressbar" style="width: 45%"></div>
+                    </div>
+                    <p class="target">₱ 25,000 <span class="text-muted fw-normal">target</span></p>
+                    <p class="text-muted mb-0 "><i class="bi bi-calendar"></i> Target: Mar 2025</p>
+                    <div class="view-details">
+                        <span>View Details</span>
+                        <i class="bi bi-arrow-right"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

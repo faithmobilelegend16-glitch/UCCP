@@ -1,0 +1,262 @@
+﻿@page "/qr"
+@inject IJSRuntime JSRuntime
+@layout NoLayout
+
+<style>
+    body, html {
+        height: 100%;
+        margin: 0;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #f2f2f2;
+        color: #111111;
+        font-weight: bold; /* make all text bold by default */
+    }
+
+    .page-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        padding: 1rem;
+        background-color: #f2f2f2;
+    }
+
+    .container {
+        background-color: #f9f9f9;
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        max-width: 400px;
+        width: 100%;
+        border: 1px solid #e0e0e0;
+    }
+
+    h1 {
+        margin-bottom: 1.5rem;
+        font-size: 3rem; /* increased font size */
+        letter-spacing: 2px; /* more spacing for emphasis */
+        color: #111111;
+        font-weight: bold;
+    }
+
+    video {
+        width: 100%;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        border: 2px solid #cccccc;
+    }
+
+    button, input[type=file] {
+        background-color: #111111;
+        color: #ffffff;
+        border: 1px solid #111111;
+        padding: 16px 28px; /* larger padding */
+        font-size: 1.2rem; /* larger font */
+        border-radius: 6px;
+        cursor: pointer;
+        margin: 8px 4px;
+        min-width: 100px;
+        transition: all 0.2s ease;
+        font-weight: bold;
+        letter-spacing: 1px; /* subtle spacing */
+    }
+
+    button:hover:not(:disabled),
+    input[type=file]:hover {
+        background-color: #ffffff;
+        color: #111111;
+        border: 1px solid #111111;
+    }
+
+    button:disabled {
+        background-color: #e0e0e0;
+        color: #888888;
+        border: 1px solid #cccccc;
+        cursor: not-allowed;
+    }
+
+    input[type=file] {
+        display: block;
+        margin: 12px auto;
+        text-align: center;
+    }
+
+    p {
+        margin: 12px 0 8px 0;
+        font-size: 1.1rem; /* bigger text */
+        color: #333333;
+        font-weight: bold;
+        letter-spacing: 0.5px;
+    }
+
+    input[type=file] {
+        max-width: 100%;
+    }
+    @@media (max-width: 480px) {
+        .container {
+            padding: 2rem 1rem;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+        }
+
+        button, input[type=file] {
+          
+            font-size: 1.1rem;
+        }
+    }
+</style>
+
+
+
+
+
+
+<div class="page-wrapper">
+    <div class="container">
+       
+        <h1>QR Login</h1>
+
+        <video id="qr-video"></video>
+        <button @onclick="StartScanner" disabled="@isScanning">
+            @(isScanning ? "Scanning..." : "Start Scan")
+        </button>
+
+        <p>Or upload a QR code image:</p>
+        <input type="file" accept="image/*" @ref="fileInput" @onchange="OnFileSelected"/>
+    </div>
+</div>
+
+@code {
+    private bool isScanning = false;
+    private ElementReference fileInput;
+    private IJSObjectReference jsModule;
+    private DotNetObjectReference<Login> dotNetRef;
+
+    [Inject] public HttpClient Http { get; set; }
+    [Inject] public NavigationManager Nav { get; set; }
+    [Inject] private NotificationService NotificationService { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            jsModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./js/qrLogin.js");
+        }
+    }
+
+    private async Task StartScanner()
+    {
+        isScanning = true;
+        StateHasChanged();
+
+        dotNetRef = DotNetObjectReference.Create(this);
+        await jsModule.InvokeVoidAsync("startScanner", dotNetRef);
+    }
+
+    private async Task OnFileSelected(ChangeEventArgs e)
+    {
+        dotNetRef = DotNetObjectReference.Create(this);
+        await jsModule.InvokeVoidAsync("decodeImage", fileInput, dotNetRef);
+    }
+
+    [JSInvokable]
+    public async Task OnQrScanned(string qrData)
+    {
+        isScanning = false;
+        StateHasChanged();
+
+        dotNetRef?.Dispose();
+        await HandleQrLogin(qrData);
+    }
+
+    [JSInvokable]
+    public async Task OnQrUploaded(string qrData)
+    {
+        dotNetRef?.Dispose();
+        await HandleQrLogin(qrData);
+    }
+
+    [JSInvokable]
+    public Task OnQrScanError(string error)
+    {
+        isScanning = false;
+        StateHasChanged();
+
+        Console.WriteLine("QR Scan Error: " + error);
+        return Task.CompletedTask;
+    }
+
+    private async Task HandleQrLogin(string qrData)
+    {
+        if (string.IsNullOrWhiteSpace(qrData))
+        {
+            NotificationService?.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Invalid QR",
+                Detail = "QR code is empty or unreadable.",
+                Duration = 3000
+            });
+            return;
+        }
+
+        var parts = qrData.Split('|');
+        if (parts.Length != 2)
+        {
+            NotificationService?.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Invalid QR",
+                Detail = "QR code format must be email|password.",
+                Duration = 3000
+            });
+            return;
+        }
+
+        var email = parts[0];
+        var password = parts[1];
+
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/auth/login", new { Email = email, Password = password });
+
+            if (response.IsSuccessStatusCode)
+            {
+                NotificationService?.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = "Login Successful",
+                    Detail = $"Welcome {email}!",
+                    Duration = 3000
+                });
+
+                await Task.Delay(1000);
+                Nav?.NavigateTo("/Home", true);
+            }
+            else
+            {
+                var msg = await response.Content.ReadAsStringAsync();
+                NotificationService?.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = "Login Failed",
+                    Detail = msg,
+                    Duration = 3000
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService?.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Error",
+                Detail = ex.Message,
+                Duration = 3000
+            });
+        }
+    }
+}

@@ -1,0 +1,452 @@
+﻿@page "/financial"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+
+@inject HttpClient Http
+@inject DialogService DialogService
+
+
+
+<RadzenStack class="rz-p-0 rz-p-md-6 rz-p-lg-12">
+    <!-- Header -->
+    <RadzenRow AlignItems="AlignItems.Center" class="rz-mb-6">
+        <RadzenColumn Size="12" SizeMD="6">
+            <RadzenText TextStyle="TextStyle.DisplayH4" class="rz-color-primary-light rz-font-weight-bold">
+                💰 Financial Management
+            </RadzenText>
+        </RadzenColumn>
+        <RadzenColumn Size="12" SizeMD="6">
+            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="1rem">
+                <RadzenButton ButtonStyle="ButtonStyle.Success" Icon="add" Text="Add Expense" Click="@OpenCreateDialog" />
+                <RadzenButton ButtonStyle="ButtonStyle.Info" Icon="file_download" Text="Export Report" Click="@ExportReport" />
+            </RadzenStack>
+        </RadzenColumn>
+    </RadzenRow>
+
+    <!-- Create/Edit Form Card -->
+    @if (ShowForm)
+    {
+        <RadzenCard class="rz-mb-6 rz-border-radius-1">
+            <RadzenStack Orientation="Orientation.Vertical" Gap="1.5rem">
+                <RadzenText TextStyle="TextStyle.H5" class="rz-color-primary-light rz-font-weight-bold">
+                    @(IsEditMode ? "✏️ Edit Expense" : "➕ Add New Expense")
+                </RadzenText>
+
+                <RadzenRow>
+                    <RadzenColumn Size="12" SizeMD="6">
+                        <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                            <RadzenLabel Text="Description" />
+                            <RadzenTextBox @bind-Value="@CurrentExpense.Description" Placeholder="Enter description" Style="width: 100%;" />
+                        </RadzenStack>
+                    </RadzenColumn>
+
+                    <RadzenColumn Size="12" SizeMD="6">
+                        <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                            <RadzenLabel Text="Category" />
+                            <RadzenDropDown @bind-Value="@CurrentExpense.Category" Data="@categories" Placeholder="Select category" Style="width: 100%;" />
+                        </RadzenStack>
+                    </RadzenColumn>
+                </RadzenRow>
+
+                <RadzenRow>
+                    <RadzenColumn Size="12" SizeMD="6">
+                        <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                            <RadzenLabel Text="Amount (₱)" />
+                            <RadzenNumeric @bind-Value="@CurrentExpense.Amount" Min="0" TValue="decimal" Placeholder="Enter amount" Style="width: 100%;" />
+                        </RadzenStack>
+                    </RadzenColumn>
+
+                    <RadzenColumn Size="12" SizeMD="6">
+                        <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                            <RadzenLabel Text="Date" />
+                            <RadzenDatePicker @bind-Value="@CurrentExpense.TransactionDate" Placeholder="Select date" Style="width: 100%;" />
+                        </RadzenStack>
+                    </RadzenColumn>
+                </RadzenRow>
+
+                <RadzenRow>
+                    <RadzenColumn Size="12" SizeMD="6">
+                        <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                            <RadzenLabel Text="Payment Method" />
+                            <RadzenDropDown @bind-Value="@CurrentExpense.PaymentMethod" Data="@paymentMethods" Placeholder="Select method" Style="width: 100%;" />
+                        </RadzenStack>
+                    </RadzenColumn>
+
+                    <RadzenColumn Size="12" SizeMD="6">
+                        <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                            <RadzenLabel Text="Type" />
+                            <RadzenDropDown @bind-Value="@CurrentExpense.TransactionType" Data="@transactionTypes" Placeholder="Select type" Style="width: 100%;" />
+                        </RadzenStack>
+                    </RadzenColumn>
+                </RadzenRow>
+
+                <RadzenRow>
+                    <RadzenColumn Size="12">
+                        <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                            <RadzenLabel Text="Notes" />
+                            <RadzenTextArea @bind-Value="@CurrentExpense.Notes" Placeholder="Enter notes" Style="width: 100%; min-height: 80px;" />
+                        </RadzenStack>
+                    </RadzenColumn>
+                </RadzenRow>
+
+                <RadzenRow>
+                    <RadzenColumn Size="12">
+                        <RadzenStack Orientation="Orientation.Horizontal" Gap="1rem" JustifyContent="JustifyContent.End">
+                            <RadzenButton ButtonStyle="ButtonStyle.Light" Text="Cancel" Click="@CancelForm" />
+                            <RadzenButton ButtonStyle="ButtonStyle.Success" Text="@(IsEditMode ? "Update" : "Save")" Click="@SaveExpense" />
+                        </RadzenStack>
+                    </RadzenColumn>
+                </RadzenRow>
+            </RadzenStack>
+        </RadzenCard>
+    }
+
+    <!-- Filter Section -->
+    <RadzenCard class="rz-mb-6 rz-border-radius-1">
+        <RadzenStack Orientation="Orientation.Vertical" Gap="1rem">
+            <RadzenText TextStyle="TextStyle.H6" class="rz-font-weight-bold">🔍 Filters</RadzenText>
+            <RadzenRow>
+                <RadzenColumn Size="12" SizeMD="3">
+                    <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                        <RadzenLabel Text="Category:" />
+                        <RadzenDropDown @bind-Value="@FilterCategory" Data="@filterCategories" Change="@OnFilterChanged"
+                                        Placeholder="All Categories" Style="width: 100%;" ClearButtonStyle="ButtonStyle.Light" />
+                    </RadzenStack>
+                </RadzenColumn>
+
+                <RadzenColumn Size="12" SizeMD="3">
+                    <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                        <RadzenLabel Text="Type:" />
+                        <RadzenDropDown @bind-Value="@FilterType" Data="@filterTypes" Change="@OnFilterChanged"
+                                        Placeholder="All Types" Style="width: 100%;" ClearButtonStyle="ButtonStyle.Light" />
+                    </RadzenStack>
+                </RadzenColumn>
+
+                <RadzenColumn Size="12" SizeMD="3">
+                    <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                        <RadzenLabel Text="From:" />
+                        <RadzenDatePicker @bind-Value="@FilterStartDate" Placeholder="Start Date" Change="@OnFilterChanged" Style="width: 100%;" />
+                    </RadzenStack>
+                </RadzenColumn>
+
+                <RadzenColumn Size="12" SizeMD="3">
+                    <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                        <RadzenLabel Text="To:" />
+                        <RadzenDatePicker @bind-Value="@FilterEndDate" Placeholder="End Date" Change="@OnFilterChanged" Style="width: 100%;" />
+                    </RadzenStack>
+                </RadzenColumn>
+            </RadzenRow>
+        </RadzenStack>
+    </RadzenCard>
+
+    <!-- Financial Summary Cards -->
+    <RadzenRow class="rz-mb-6">
+        <RadzenColumn Size="12" SizeMD="6" SizeLG="3">
+            <RadzenCard class="rz-background-color-success-lighter rz-border-radius-1">
+                <RadzenStack Orientation="Orientation.Vertical" Gap="1rem" AlignItems="AlignItems.Center">
+                    <RadzenText TextStyle="TextStyle.Body2" class="rz-color-secondary">💵 Total Income</RadzenText>
+                    <RadzenText TextStyle="TextStyle.DisplayH5" class="rz-color-primary-light rz-font-weight-bold">
+                        ₱@FilteredTransactions.Where(x => x.TransactionType == "Income").Sum(x => x.Amount).ToString("F2")
+                    </RadzenText>
+                    <RadzenText TextStyle="TextStyle.Caption" class="rz-color-success">Inflows only</RadzenText>
+                </RadzenStack>
+            </RadzenCard>
+        </RadzenColumn>
+
+        <RadzenColumn Size="12" SizeMD="6" SizeLG="3">
+            <RadzenCard class="rz-background-color-danger-lighter rz-border-radius-1">
+                <RadzenStack Orientation="Orientation.Vertical" Gap="1rem" AlignItems="AlignItems.Center">
+                    <RadzenText TextStyle="TextStyle.Body2" class="rz-color-secondary">💸 Total Expenses</RadzenText>
+                    <RadzenText TextStyle="TextStyle.DisplayH5" class="rz-color-primary-light rz-font-weight-bold">
+                        ₱@FilteredTransactions.Where(x => x.TransactionType == "Expense").Sum(x => x.Amount).ToString("F2")
+                    </RadzenText>
+                    <RadzenText TextStyle="TextStyle.Caption" class="rz-color-error">Outflows only</RadzenText>
+                </RadzenStack>
+            </RadzenCard>
+        </RadzenColumn>
+
+        <RadzenColumn Size="12" SizeMD="6" SizeLG="3">
+            <RadzenCard class="rz-background-color-info-lighter rz-border-radius-1">
+                <RadzenStack Orientation="Orientation.Vertical" Gap="1rem" AlignItems="AlignItems.Center">
+                    <RadzenText TextStyle="TextStyle.Body2" class="rz-color-secondary">💰 Net Profit</RadzenText>
+                    <RadzenText TextStyle="TextStyle.DisplayH5" class="rz-color-primary-light rz-font-weight-bold">
+                        ₱@GetNetProfit().ToString("F2")
+                    </RadzenText>
+                    <RadzenText TextStyle="TextStyle.Caption" class="@(GetNetProfit() >= 0 ? "rz-color-success" : "rz-color-error")">
+                        @(GetNetProfit() >= 0 ? "↑ Positive" : "↓ Negative")
+                    </RadzenText>
+                </RadzenStack>
+            </RadzenCard>
+        </RadzenColumn>
+
+        <RadzenColumn Size="12" SizeMD="6" SizeLG="3">
+            <RadzenCard class="rz-background-color-warning-lighter rz-border-radius-1">
+                <RadzenStack Orientation="Orientation.Vertical" Gap="1rem" AlignItems="AlignItems.Center">
+                    <RadzenText TextStyle="TextStyle.Body2" class="rz-color-secondary">📊 Total Count</RadzenText>
+                    <RadzenText TextStyle="TextStyle.DisplayH5" class="rz-color-primary-light rz-font-weight-bold">
+                        @FilteredTransactions.Count()
+                    </RadzenText>
+                    <RadzenText TextStyle="TextStyle.Caption" class="rz-color-secondary">Transactions</RadzenText>
+                </RadzenStack>
+            </RadzenCard>
+        </RadzenColumn>
+    </RadzenRow>
+
+    <!-- Transactions Table -->
+    <RadzenCard class="rz-border-radius-1">
+        <RadzenStack Orientation="Orientation.Vertical" Gap="1rem">
+            <RadzenText TextStyle="TextStyle.H5" class="rz-color-primary-light rz-font-weight-bold">
+                📋 Transaction History
+            </RadzenText>
+
+            @if (IsLoading)
+            {
+                <RadzenProgressBar Value="100" ShowValue="false" />
+            }
+            else if (FilteredTransactions.Count() > 0)
+            {
+                <RadzenDataGrid AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true" 
+                               Data="@FilteredTransactions" TItem="FinancialTransaction" RowRender="@RowRender"
+                               SelectionMode="DataGridSelectionMode.Single">
+                    <Columns>
+                        <RadzenDataGridColumn TItem="FinancialTransaction" Property="TransactionDate" Title="Date" Width="120px" 
+                                            FormatString="{0:MM/dd/yyyy}" Sortable="true" />
+                        
+                        <RadzenDataGridColumn TItem="FinancialTransaction" Property="Description" Title="Description" Width="180px" />
+                        
+                        <RadzenDataGridColumn TItem="FinancialTransaction" Property="Category" Title="Category" Width="120px" />
+                        
+                        <RadzenDataGridColumn TItem="FinancialTransaction" Property="TransactionType" Title="Type" Width="100px">
+                            <Template Context="data">
+                                @if (data.TransactionType == "Income")
+                                {
+                                    <RadzenBadge BadgeStyle="BadgeStyle.Success" Text="@data.TransactionType" />
+                                }
+                                else
+                                {
+                                    <RadzenBadge BadgeStyle="BadgeStyle.Danger" Text="@data.TransactionType" />
+                                }
+                            </Template>
+                        </RadzenDataGridColumn>
+
+                        @*<RadzenDataGridColumn TItem="FinancialTransaction" Property="Amount" Title="Amount" Width="120px" Sortable="true">
+                            <Template Context="data">
+                                <RadzenText class="rz-font-weight-bold @(data.TransactionType == "Income" ? "rz-color-success" : "rz-color-error")">
+                                    @(data.TransactionType == "Income" ? "+" : "-")₱@data.Amount.ToString("F2")
+                                </RadzenText>
+                            </Template>
+                        </RadzenDataGridColumn>*@
+
+                        <RadzenDataGridColumn TItem="FinancialTransaction" Property="PaymentMethod" Title="Method" Width="100px" />
+                        
+                        <RadzenDataGridColumn TItem="FinancialTransaction" Property="Notes" Title="Notes" Width="150px" />
+
+                        <RadzenDataGridColumn TItem="FinancialTransaction" Title="Actions" Width="120px" Sortable="false" Filterable="false">
+                            <Template Context="data">
+                                <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
+                                    <RadzenButton ButtonStyle="ButtonStyle.Info" Icon="edit" Size="ButtonSize.Small" Click="@(() => EditExpense(data))" />
+                                    <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Size="ButtonSize.Small" Click="@(() => DeleteExpense(data.Id))" />
+                                </RadzenStack>
+                            </Template>
+                        </RadzenDataGridColumn>
+                    </Columns>
+                </RadzenDataGrid>
+            }
+            else
+            {
+                <RadzenAlert AlertStyle="AlertStyle.Info" Variant="Variant.Flat" Shade="Shade.Lighter">
+                    <RadzenText>📭 No transactions found. Start by adding your first transaction!</RadzenText>
+                </RadzenAlert>
+            }
+        </RadzenStack>
+    </RadzenCard>
+</RadzenStack>
+
+@code {
+    private List<FinancialTransaction> Transactions = new();
+    private List<FinancialTransaction> FilteredTransactions => ApplyFilters();
+    private FinancialTransaction CurrentExpense = new();
+    private bool ShowForm = false;
+    private bool IsEditMode = false;
+    private bool IsLoading = false;
+
+    private string FilterCategory = null;
+    private string FilterType = null;
+    private DateTime? FilterStartDate = null;
+    private DateTime? FilterEndDate = null;
+
+    private List<string> categories = new() { "Sales Revenue", "Food & Beverage", "Utilities", "Rent", "Salaries", "Marketing", "Supplies", "Equipment", "Other" };
+    private List<string> paymentMethods = new() { "Cash", "Credit Card", "Debit Card", "Online Transfer", "Check" };
+    private List<string> transactionTypes = new() { "Income", "Expense" };
+
+    private List<string> filterCategories = new() { "", "Sales Revenue", "Food & Beverage", "Utilities", "Rent", "Salaries", "Marketing", "Supplies", "Equipment", "Other" };
+    private List<string> filterTypes = new() { "", "Income", "Expense" };
+
+    private Dictionary<string, decimal> CategorySummary => GetCategorySummary();
+    private Dictionary<string, decimal> PaymentMethodSummary => GetPaymentMethodSummary();
+
+    protected override async Task OnInitializedAsync()
+    {
+     
+        await LoadTransactions();
+    }
+
+    private async Task LoadTransactions()
+    {
+        try
+        {
+            IsLoading = true;
+            var response = await Http.GetAsync("api/financial");
+            if (response.IsSuccessStatusCode)
+            {
+                Transactions = await response.Content.ReadFromJsonAsync<List<FinancialTransaction>>();
+            }
+        }
+        catch (Exception ex)
+        {
+            await DialogService.Alert($"Error loading transactions: {ex.Message}", "Error");
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private List<FinancialTransaction> ApplyFilters()
+    {
+        var result = Transactions.AsEnumerable();
+
+        if (!string.IsNullOrEmpty(FilterCategory))
+            result = result.Where(x => x.Category == FilterCategory);
+
+        if (!string.IsNullOrEmpty(FilterType))
+            result = result.Where(x => x.TransactionType == FilterType);
+
+        if (FilterStartDate.HasValue)
+            result = result.Where(x => x.TransactionDate >= FilterStartDate.Value);
+
+        if (FilterEndDate.HasValue)
+            result = result.Where(x => x.TransactionDate <= FilterEndDate.Value.AddDays(1));
+
+        return result.OrderByDescending(x => x.TransactionDate).ToList();
+    }
+
+    private Dictionary<string, decimal> GetCategorySummary()
+    {
+        return FilteredTransactions
+            .Where(x => x.TransactionType == "Expense")
+            .GroupBy(x => x.Category)
+            .OrderByDescending(g => g.Sum(x => x.Amount))
+            .ToDictionary(g => g.Key, g => g.Sum(x => x.Amount));
+    }
+
+    private Dictionary<string, decimal> GetPaymentMethodSummary()
+    {
+        return FilteredTransactions
+            .GroupBy(x => x.PaymentMethod)
+            .OrderByDescending(g => g.Sum(x => x.Amount))
+            .ToDictionary(g => g.Key, g => g.Sum(x => x.Amount));
+    }
+
+    private decimal GetNetProfit()
+    {
+        var income = FilteredTransactions.Where(x => x.TransactionType == "Income").Sum(x => x.Amount);
+        var expenses = FilteredTransactions.Where(x => x.TransactionType == "Expense").Sum(x => x.Amount);
+        return income - expenses;
+    }
+
+    private void OnFilterChanged()
+    {
+        StateHasChanged();
+    }
+
+    private void OpenCreateDialog()
+    {
+        CurrentExpense = new FinancialTransaction
+        {
+            TransactionDate = DateTime.Now,
+            TransactionType = "Expense"
+        };
+        IsEditMode = false;
+        ShowForm = true;
+    }
+
+    private void EditExpense(FinancialTransaction expense)
+    {
+        CurrentExpense = new FinancialTransaction
+        {
+            Id = expense.Id,
+            Description = expense.Description,
+            Category = expense.Category,
+            Amount = expense.Amount,
+            TransactionDate = expense.TransactionDate,
+            PaymentMethod = expense.PaymentMethod,
+            TransactionType = expense.TransactionType,
+            Notes = expense.Notes
+        };
+        IsEditMode = true;
+        ShowForm = true;
+    }
+
+    private void CancelForm()
+    {
+        CurrentExpense = new FinancialTransaction();
+        ShowForm = false;
+        IsEditMode = false;
+    }
+
+    private async Task SaveExpense()
+    {
+        if (IsEditMode)
+        {
+            var index = Transactions.FindIndex(x => x.Id == CurrentExpense.Id);
+            if (index != -1)
+            {
+                Transactions[index] = CurrentExpense;
+            }
+        }
+        else
+        {
+            Transactions.Add(CurrentExpense);
+        }
+
+        ShowForm = false;
+        IsEditMode = false;
+
+        await Task.CompletedTask;
+    }
+
+    private async Task DeleteExpense(string id)
+    {
+        var toRemove = Transactions.FirstOrDefault(x => x.Id == id);
+        if (toRemove != null)
+        {
+            Transactions.Remove(toRemove);
+        }
+
+        await Task.CompletedTask;
+    }
+
+    private void RowRender(RowRenderEventArgs<FinancialTransaction> args)
+    {
+        // Optional: implement row styling logic
+    }
+
+    private async Task ExportReport()
+    {
+        // Implement export logic here
+        await DialogService.Alert("Export functionality is not implemented yet.", "Info");
+    }
+
+    public class FinancialTransaction
+    {
+        public string Id { get; set; } = Guid.NewGuid().ToString();
+        public string Description { get; set; }
+        public string Category { get; set; }
+        public decimal Amount { get; set; }
+        public DateTime TransactionDate { get; set; } = DateTime.Now;
+        public string PaymentMethod { get; set; }
+        public string TransactionType { get; set; } = "Expense";
+        public string Notes { get; set; }
+    }
+}

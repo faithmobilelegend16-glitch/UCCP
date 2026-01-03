@@ -1,0 +1,408 @@
+﻿@page "/sales"
+
+@inject HttpClient Http
+@inject DialogService DialogService
+
+<RadzenStack class="rz-p-0 rz-p-md-6 rz-p-lg-12">
+    <!-- Header -->
+    <RadzenRow AlignItems="AlignItems.Center" class="rz-mb-6">
+        <RadzenColumn Size="12" SizeMD="6">
+            <RadzenText TextStyle="TextStyle.DisplayH4" class="rz-color-primary-light rz-font-weight-bold">
+                📊 Sales Management
+            </RadzenText>
+        </RadzenColumn>
+        <RadzenColumn Size="12" SizeMD="6">
+            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
+                <RadzenButton ButtonStyle="ButtonStyle.Success" Icon="add" Text="Add New Sale" Click="@OpenCreateDialog" />
+            </RadzenStack>
+        </RadzenColumn>
+    </RadzenRow>
+
+    <!-- Create/Edit Form Card -->
+    @if (ShowForm)
+    {
+    <RadzenCard class="rz-mb-6 rz-border-radius-1">
+        <RadzenStack Orientation="Orientation.Vertical" Gap="1.5rem">
+            <RadzenText TextStyle="TextStyle.H5" class="rz-color-primary-light rz-font-weight-bold">
+                @(IsEditMode ? "✏️ Edit Sale" : "➕ Add New Sale")
+            </RadzenText>
+
+            <RadzenRow>
+                <RadzenColumn Size="12" SizeMD="6">
+                    <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                        <RadzenLabel Text="Product Name" />
+                        <RadzenTextBox @bind-Value="@CurrentSale.ProductName" Placeholder="Enter product name"
+                                       Style="width: 100%;" />
+                    </RadzenStack>
+                </RadzenColumn>
+
+                <RadzenColumn Size="12" SizeMD="6">
+                    <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                        <RadzenLabel Text="Quantity" />
+                        <RadzenNumeric @bind-Value="@CurrentSale.Quantity" Min="1" Placeholder="Enter quantity"
+                                       Style="width: 100%;" />
+                    </RadzenStack>
+                </RadzenColumn>
+            </RadzenRow>
+
+            <RadzenRow>
+                <RadzenColumn Size="12" SizeMD="6">
+                    <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                        <RadzenLabel Text="Sale Amount (₱)" />
+                        <RadzenNumeric @bind-Value="@CurrentSale.Amount" Min="0" TValue="decimal" Placeholder="Enter amount"
+                                       Style="width: 100%;" />
+                    </RadzenStack>
+                </RadzenColumn>
+
+                <RadzenColumn Size="12" SizeMD="6">
+                    <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                        <RadzenLabel Text="Sale Date" />
+                        <RadzenDatePicker @bind-Value="@CurrentSale.SaleDate" Placeholder="Select date"
+                                          Style="width: 100%;" />
+                    </RadzenStack>
+                </RadzenColumn>
+            </RadzenRow>
+
+            <RadzenRow>
+                <RadzenColumn Size="12">
+                    <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                        <RadzenLabel Text="Category" />
+                        <RadzenDropDown @bind-Value="@CurrentSale.Category" Data="@categories"
+                                        Placeholder="Select category" Style="width: 100%;" />
+                    </RadzenStack>
+                </RadzenColumn>
+            </RadzenRow>
+
+            <RadzenRow>
+                <RadzenColumn Size="12">
+                    <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                        <RadzenLabel Text="Description (Optional)" />
+                        <RadzenTextArea @bind-Value="@CurrentSale.Description" Placeholder="Enter description"
+                                        Style="width: 100%; min-height: 100px;" />
+                    </RadzenStack>
+                </RadzenColumn>
+            </RadzenRow>
+
+            <RadzenRow>
+                <RadzenColumn Size="12">
+                    <RadzenStack Orientation="Orientation.Horizontal" Gap="1rem" JustifyContent="JustifyContent.End">
+                        <RadzenButton ButtonStyle="ButtonStyle.Light" Text="Cancel" Click="@CancelForm" />
+                        <RadzenButton ButtonStyle="ButtonStyle.Success" Text="@(IsEditMode ? "Update Sale" : "Save Sale")"
+                                      Click="@SaveSale" />
+                    </RadzenStack>
+                </RadzenColumn>
+            </RadzenRow>
+        </RadzenStack>
+    </RadzenCard>
+    }
+
+    <!-- Filter Section -->
+    <RadzenCard class="rz-mb-6 rz-border-radius-1">
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem" Wrap="FlexWrap.Wrap">
+            <RadzenLabel Text="🔍 Filter by Category:" />
+            <RadzenDropDown @bind-Value="@FilterCategory" Data="@filterCategories" Change="@OnFilterChanged"
+                            Placeholder="All Categories" Style="min-width: 200px;" ClearButtonStyle="ButtonStyle.Light" />
+
+            <RadzenLabel Text="📅 Date Range:" />
+            <RadzenDatePicker @bind-Value="@FilterStartDate" Placeholder="Start Date" Style="width: 150px;" Change="@OnFilterChanged" />
+            <RadzenDatePicker @bind-Value="@FilterEndDate" Placeholder="End Date" Style="width: 150px;" Change="@OnFilterChanged" />
+        </RadzenStack>
+    </RadzenCard>
+
+    <!-- Statistics Cards -->
+    <RadzenRow class="rz-mb-6">
+        <RadzenColumn Size="12" SizeMD="6" SizeLG="3">
+            <RadzenCard class="rz-background-color-info-lighter rz-border-radius-1">
+                <RadzenStack Orientation="Orientation.Vertical" Gap="1rem" AlignItems="AlignItems.Center">
+                    <RadzenText TextStyle="TextStyle.Body2" class="rz-color-secondary">💰 Total Sales</RadzenText>
+                    <RadzenText TextStyle="TextStyle.DisplayH5" class="rz-color-primary-light rz-font-weight-bold">
+                        ₱@TotalSalesAmount.ToString("F2")
+                    </RadzenText>
+                </RadzenStack>
+            </RadzenCard>
+        </RadzenColumn>
+
+        <RadzenColumn Size="12" SizeMD="6" SizeLG="3">
+            <RadzenCard class="rz-background-color-success-lighter rz-border-radius-1">
+                <RadzenStack Orientation="Orientation.Vertical" Gap="1rem" AlignItems="AlignItems.Center">
+                    <RadzenText TextStyle="TextStyle.Body2" class="rz-color-secondary">📦 Total Items</RadzenText>
+                    <RadzenText TextStyle="TextStyle.DisplayH5" class="rz-color-primary-light rz-font-weight-bold">
+                        @TotalItems
+                    </RadzenText>
+                </RadzenStack>
+            </RadzenCard>
+        </RadzenColumn>
+
+        <RadzenColumn Size="12" SizeMD="6" SizeLG="3">
+            <RadzenCard class="rz-background-color-warning-lighter rz-border-radius-1">
+                <RadzenStack Orientation="Orientation.Vertical" Gap="1rem" AlignItems="AlignItems.Center">
+                    <RadzenText TextStyle="TextStyle.Body2" class="rz-color-secondary">📋 Total Records</RadzenText>
+                    <RadzenText TextStyle="TextStyle.DisplayH5" class="rz-color-primary-light rz-font-weight-bold">
+                        @FilteredSales.Count()
+                    </RadzenText>
+                </RadzenStack>
+            </RadzenCard>
+        </RadzenColumn>
+
+        <RadzenColumn Size="12" SizeMD="6" SizeLG="3">
+            <RadzenCard class="rz-background-color-primary-lighter rz-border-radius-1">
+                <RadzenStack Orientation="Orientation.Vertical" Gap="1rem" AlignItems="AlignItems.Center">
+                    <RadzenText TextStyle="TextStyle.Body2" class="rz-color-secondary">📊 Avg Sale</RadzenText>
+                    <RadzenText TextStyle="TextStyle.DisplayH5" class="rz-color-primary-light rz-font-weight-bold">
+                        ₱@(FilteredSales.Count() > 0 ? FilteredSales.Average(x => x.Amount).ToString("F2") : "0.00")
+                    </RadzenText>
+                </RadzenStack>
+            </RadzenCard>
+        </RadzenColumn>
+    </RadzenRow>
+
+    <!-- Data Grid Table -->
+    <RadzenCard class="rz-border-radius-1">
+        <RadzenStack Orientation="Orientation.Vertical" Gap="1rem">
+            <RadzenText TextStyle="TextStyle.H5" class="rz-color-primary-light rz-font-weight-bold">
+                📋 Sales Records
+            </RadzenText>
+
+            @if (IsLoading)
+            {
+            <RadzenProgressBar Value="100" ShowValue="false" />
+            }
+            else if (FilteredSales.Count() > 0)
+            {
+            <RadzenDataGrid AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true"
+                            Data="@FilteredSales" TItem="Sale" RowRender="@RowRender" SelectionMode="DataGridSelectionMode.Single">
+                <Columns>
+                    <RadzenDataGridColumn TItem="Sale" Property="Id" Title="ID" Width="80px" />
+
+                    <RadzenDataGridColumn TItem="Sale" Property="ProductName" Title="Product" Width="150px" />
+
+                    <RadzenDataGridColumn TItem="Sale" Property="Category" Title="Category" Width="120px" />
+
+                    <RadzenDataGridColumn TItem="Sale" Property="Quantity" Title="Quantity" Width="100px" Sortable="true" />
+
+                    <RadzenDataGridColumn TItem="Sale" Property="Amount" Title="Amount" Width="120px" Sortable="true">
+                        <Template Context="data">
+                            ₱@data.Amount.ToString("F2")
+                        </Template>
+                    </RadzenDataGridColumn>
+
+                    <RadzenDataGridColumn TItem="Sale" Property="SaleDate" Title="Date" Width="120px" Sortable="true" FormatString="{0:MM/dd/yyyy}">
+                    </RadzenDataGridColumn>
+
+                    <RadzenDataGridColumn TItem="Sale" Property="Description" Title="Description" Width="200px" />
+
+                    <RadzenDataGridColumn TItem="Sale" Title="Actions" Width="150px" Sortable="false" Filterable="false">
+                        <Template Context="data">
+                            <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
+                                <RadzenButton ButtonStyle="ButtonStyle.Info" Icon="edit" Size="ButtonSize.Small"
+                                              Click="@(() => EditSale(data))" />
+                                <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Size="ButtonSize.Small"
+                                              Click="@(() => DeleteSale(data.Id))" />
+                            </RadzenStack>
+                        </Template>
+                    </RadzenDataGridColumn>
+                </Columns>
+            </RadzenDataGrid>
+            }
+            else
+            {
+            <RadzenAlert AlertStyle="AlertStyle.Info" Variant="Variant.Flat" Shade="Shade.Lighter">
+                <RadzenText>📭 No sales records found. Add your first sale!</RadzenText>
+            </RadzenAlert>
+            }
+        </RadzenStack>
+    </RadzenCard>
+</RadzenStack>
+
+
+@code {
+    private List<Sale> Sales = new();
+    private List<Sale> FilteredSales => ApplyFilters();
+    private Sale CurrentSale = new();
+    private bool ShowForm = false;
+    private bool IsEditMode = false;
+    private bool IsLoading = false;
+
+    private string FilterCategory = null;
+    private DateTime? FilterStartDate = null;
+    private DateTime? FilterEndDate = null;
+
+    private List<string> categories = new() { "Milk Tea", "Coffee", "Juice", "Smoothie", "Snacks" };
+    private List<string> filterCategories = new() { "", "Milk Tea", "Coffee", "Juice", "Smoothie", "Snacks" };
+
+    private decimal TotalSalesAmount => FilteredSales.Sum(x => x.Amount);
+    private int TotalItems => FilteredSales.Sum(x => x.Quantity);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadSales();
+    }
+
+    private async Task LoadSales()
+    {
+        try
+        {
+            IsLoading = true;
+            var response = await Http.GetAsync("api/sales");
+            if (response.IsSuccessStatusCode)
+            {
+                Sales = await response.Content.ReadFromJsonAsync<List<Sale>>();
+            }
+        }
+        catch (Exception ex)
+        {
+            await DialogService.Alert($"Error loading sales: {ex.Message}", "Error");
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private List<Sale> ApplyFilters()
+    {
+        var result = Sales.AsEnumerable();
+
+        if (!string.IsNullOrEmpty(FilterCategory))
+        {
+            result = result.Where(x => x.Category == FilterCategory);
+        }
+
+        if (FilterStartDate.HasValue)
+        {
+            result = result.Where(x => x.SaleDate >= FilterStartDate.Value);
+        }
+
+        if (FilterEndDate.HasValue)
+        {
+            result = result.Where(x => x.SaleDate <= FilterEndDate.Value);
+        }
+
+        return result.ToList();
+    }
+
+    private void OnFilterChanged() => StateHasChanged();
+
+    private void OpenCreateDialog()
+    {
+        CurrentSale = new Sale { SaleDate = DateTime.Now };
+        IsEditMode = false;
+        ShowForm = true;
+    }
+
+    private void EditSale(Sale sale)
+    {
+        CurrentSale = new Sale
+        {
+            Id = sale.Id,
+            ProductName = sale.ProductName,
+            Quantity = sale.Quantity,
+            Amount = sale.Amount,
+            Category = sale.Category,
+            Description = sale.Description,
+            SaleDate = sale.SaleDate
+        };
+        IsEditMode = true;
+        ShowForm = true;
+    }
+
+    private void CancelForm()
+    {
+        ShowForm = false;
+        CurrentSale = new();
+    }
+
+    private async Task SaveSale()
+    {
+        if (string.IsNullOrWhiteSpace(CurrentSale.ProductName) || CurrentSale.Amount <= 0)
+        {
+            await DialogService.Alert("Please fill in all required fields", "Validation Error");
+            return;
+        }
+
+        try
+        {
+            IsLoading = true;
+            HttpResponseMessage response;
+
+            if (IsEditMode)
+            {
+                response = await Http.PutAsJsonAsync($"api/sales/{CurrentSale.Id}", CurrentSale);
+            }
+            else
+            {
+                response = await Http.PostAsJsonAsync("api/sales", CurrentSale);
+            }
+
+            if (response.IsSuccessStatusCode)
+            {
+                await DialogService.Alert(IsEditMode ? "Sale updated successfully!" : "Sale added successfully!", "Success");
+                await LoadSales();
+                CancelForm();
+            }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                await DialogService.Alert($"Error: {errorContent}", "Error");
+            }
+        }
+        catch (Exception ex)
+        {
+            await DialogService.Alert($"Error saving sale: {ex.Message}", "Error");
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private async Task DeleteSale(string id)
+    {
+        var result = await DialogService.Confirm("Are you sure you want to delete this sale?", "Delete Confirmation");
+        if (result.HasValue && result.Value)
+        {
+            try
+            {
+                IsLoading = true;
+                var response = await Http.DeleteAsync($"api/sales/{id}");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    await DialogService.Alert("Sale deleted successfully!", "Success");
+                    await LoadSales();
+                }
+                else
+                {
+                    await DialogService.Alert("Error deleting sale", "Error");
+                }
+            }
+            catch (Exception ex)
+            {
+                await DialogService.Alert($"Error: {ex.Message}", "Error");
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+    }
+
+    private void RowRender(RowRenderEventArgs<Sale> args)
+    {
+        if (args.Data.Amount > 500)
+        {
+            args.Attributes.Add("style", "background-color: #fff3cd;");
+        }
+    }
+
+    public class Sale
+    {
+        public string Id { get; set; } = Guid.NewGuid().ToString();
+        public string ProductName { get; set; }
+        public int Quantity { get; set; }
+        public decimal Amount { get; set; }
+        public string Category { get; set; }
+        public string Description { get; set; }
+        public DateTime SaleDate { get; set; } = DateTime.Now;
+    }
+}

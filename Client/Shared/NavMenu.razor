@@ -1,0 +1,168 @@
+﻿@using Microsoft.AspNetCore.Components.Authorization
+<style>
+    body, html {
+        background: linear-gradient(135deg, #121212, #1e1e1e);
+        color: #d7d7d7;
+        margin: 0;
+        height: 100%;
+        overflow: hidden;
+        font-family: Inter, Arial, sans-serif;
+        font-size: 13px; /* base text size */
+    }
+
+    .rz-panel-menu {
+        background-color: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0.1rem 0.4rem;   /* less vertical padding */
+
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        overflow: hidden;
+    }
+
+    .menu-top {
+        flex-grow: 1;
+    }
+    .menu-bottom {
+        margin-top: auto;
+    }
+
+    .menu-section {
+        font-size: 0.58rem;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        color: #9ca3af !important;
+        text-transform: uppercase;
+        margin-top: 0.25rem;  /* reduced */
+        margin-bottom: 0.15rem;
+        padding: 0 0.2rem;
+        line-height: 1; /* compact */
+    }
+
+    /* 🔹 Make menu items full width */
+    .rz-panel-menu .rz-navigation-link {
+        color: #d7d7d7 !important;
+        border-radius: 5px;
+        padding: 0.18rem 0.45rem;
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-size: 0.76rem;
+        font-weight: 400;
+        line-height: 1;
+        width: 100% !important;      /* full sidebar width */
+        box-sizing: border-box;      /* include padding */
+        justify-content: flex-start; /* keep text left */
+    }
+
+    /* 🔹 Hover and active cover full width */
+    .rz-panel-menu .rz-navigation-link.rz-state-active,
+    .rz-panel-menu .rz-navigation-link:hover {
+        width: 100% !important;
+        background-color: rgba(139, 92, 246, 0.2) !important;
+        color: #e9d5ff !important;
+    }
+
+    .rz-panel-menu .rz-panel-menu-group,
+    .rz-panel-menu .rz-navigation-item,
+    .rz-panel-menu .rz-navigation-link,
+    .rz-panel-menu .rz-navigation-item::after,
+    .rz-panel-menu .rz-navigation-link::after {
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    .rz-panel-menu .rz-navigation-link .material-icons {
+        font-size: 14px;
+        opacity: 0.85;
+        line-height: 1;
+    }
+</style>
+
+<AuthorizeView Roles="Admin">
+    <RadzenPanelMenu ShowArrow="false">
+
+        <div class="menu-top">
+            <!-- DASHBOARD -->
+            <div class="menu-section">DASHBOARD</div>
+            <RadzenPanelMenuItem Path="dashboard" Text="Dashboard Overview" Icon="dashboard" />
+            <RadzenPanelMenuItem Path="registration-tracking" Text="Registration Tracking" Icon="how_to_reg" />
+
+            <!-- MEMBER MANAGEMENT -->
+            <div class="menu-section">MEMBERS</div>
+            <RadzenPanelMenuItem Path="members" Text="Member Directory" Icon="people" />
+            <RadzenPanelMenuItem Path="attendance" Text="Attendance Tracking" Icon="event_note" />
+            <RadzenPanelMenuItem Path="visitor-management" Text="Visitors" Icon="person_add" />
+
+
+            <!-- MINISTRY & EVENTS -->
+            <div class="menu-section">MINISTRIES</div>
+            <RadzenPanelMenuItem Path="ministries" Text="Ministry Groups" Icon="group_work" />
+            <RadzenPanelMenuItem Path="events" Text="Church Events" Icon="calendar_month" />
+            <RadzenPanelMenuItem Path="volunteer-schedule" Text="Volunteer Schedule" Icon="schedule" />
+
+
+            <!-- GIVING & FINANCE -->
+            <div class="menu-section">GIVING & FINANCE</div>
+            <RadzenPanelMenuItem Path="giving" Text="Tithes & Offerings" Icon="favorite" />
+            <RadzenPanelMenuItem Path="budget" Text="Budget Tracking" Icon="account_balance_wallet" />
+            <RadzenPanelMenuItem Path="financial-reports" Text="Financial Reports" Icon="bar_chart" />
+
+            <!-- ANNOUNCEMENTS & COMMS -->
+            <div class="menu-section">COMMUNICATIONS</div>
+            <RadzenPanelMenuItem Path="announcements" Text="Announcements" Icon="notifications_active" />
+            <RadzenPanelMenuItem Path="prayer-requests" Text="Prayer Requests" Icon="favorite_border" />
+        </div>
+
+        <!-- SETTINGS pinned at bottom -->
+        <div class="menu-bottom">
+            <div class="menu-section">ADMIN</div>
+            <RadzenPanelMenuItem Path="church-settings" Text="Church Settings" Icon="settings" />
+            <RadzenPanelMenuItem Path="reports" Text="Reports & Analytics" Icon="analytics" />
+        </div>
+
+    </RadzenPanelMenu>
+</AuthorizeView>
+
+
+
+<AuthorizeView Roles="User">
+    <RadzenPanelMenu ShowArrow="false">
+
+        <div class="menu-top">
+            <!-- DASHBOARD -->
+            <div class="menu-section">DASHBOARD</div>
+            <RadzenPanelMenuItem Path="dashboard" Text="Dashboard Overview" Icon="dashboard" />
+           
+
+
+            <!-- MEMBER INFORMATION -->
+            <div class="menu-section">MY CHURCH</div>
+            <RadzenPanelMenuItem Path="my-profile" Text="My Profile" Icon="person" />
+            <RadzenPanelMenuItem Path="attendance-history" Text="My Attendance" Icon="event_note" />
+            <RadzenPanelMenuItem Path="my-giving" Text="My Giving" Icon="favorite" />
+
+
+            <!-- CHURCH INFO & EVENTS -->
+            <div class="menu-section">CHURCH LIFE</div>
+            <RadzenPanelMenuItem Path="events" Text="Church Events" Icon="calendar_month" />
+            <RadzenPanelMenuItem Path="ministries" Text="Ministry Groups" Icon="group_work" />
+            <RadzenPanelMenuItem Path="prayer-board" Text="Prayer Requests" Icon="favorite_border" />
+
+            <!-- ANNOUNCEMENTS -->
+            <div class="menu-section">COMMUNICATIONS</div>
+            <RadzenPanelMenuItem Path="announcements" Text="Announcements" Icon="notifications_active" />
+        </div>
+
+    </RadzenPanelMenu>
+</AuthorizeView>
+
+
+@code {
+bool sidebarExpanded = false;
+bool isShowArrow = true;
+bool multiple = true;
+bool isAuthenticated = true;
+}

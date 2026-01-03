@@ -1,0 +1,99 @@
+﻿@inherits LayoutComponentBase
+@inject DialogService DialogService
+
+<style>
+    /* Make body transparent */
+    .rz-body {
+        background: transparent !important;
+        box-shadow: none !important;
+        border: none !important;
+        padding: 15px !important;
+    }
+
+    /* Remove sidebar borders and shadows */
+    .rz-panelmenu .rz-navigation-item,
+    .rz-panelmenu .rz-link,
+    .rz-panelmenu .rz-navigation-item .rz-link {
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    /* Subtle hover effect for sidebar items */
+    .rz-panelmenu .rz-link:hover {
+        background: rgba(255, 255, 255, 0.1) !important;
+    }
+
+    /* Transparent header and sidebar */
+    .no-background {
+        background-color: transparent !important;
+        box-shadow: none !important;
+        border: none !important;
+    }
+
+    /* Custom sidebar toggle button */
+    .custom-sidebar-toggle {
+        background-color: rgba(51, 51, 51, 0.7) !important; /* semi-transparent */
+        color: #F5F5F5 !important;
+        border: none !important;
+        border-radius: 50% !important; /* make it fully circular */
+        width: 40px; /* ensure square */
+        height: 40px; /* ensure square */
+        padding: 0; /* optional, center icon properly */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .custom-sidebar-toggle:hover {
+        background-color: rgba(68, 68, 68, 0.7) !important; /* lighter hover */
+    }
+
+    /* Optional: adjust text color in sidebar when transparent */
+    .rz-panelmenu .rz-link,
+    .rz-panelmenu .rz-navigation-item .rz-link {
+        color: #F5F5F5 !important;
+    }
+</style>
+
+<RadzenLayout>
+    <RadzenComponents />
+
+    <RadzenHeader class="no-background">
+        <RadzenTheme Theme="material"></RadzenTheme>
+        <RadzenStack Orientation="Orientation.Horizontal" Wrap="FlexWrap.Wrap" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween">
+
+            <!-- Left Stack -->
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="-25px">
+                @*<RadzenSidebarToggle Click="@(() => sidebar1Expanded = !sidebar1Expanded)" class="custom-sidebar-toggle" />*@
+            </RadzenStack>
+
+            <!-- Right Stack -->
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="5px">
+                <RadzenAppearanceToggle />
+                <RadzenButton ButtonStyle="ButtonStyle.Base" Variant="Variant.Text" Icon="format_paint" />
+                <RadzenButton ButtonStyle="ButtonStyle.Base" Variant="Variant.Text" Icon="account_circle" />
+            </RadzenStack>
+        </RadzenStack>
+    </RadzenHeader>
+
+    <RadzenSidebar @bind-Expanded="@sidebar1Expanded" class="no-background">
+        <RadzenStack Orientation="Orientation.Vertical" AlignItems="AlignItems.Center" Gap="10px" Style="padding: 20px; text-align: center;">
+            <img src="https://thumbs.dreamstime.com/b/d-icon-avatar-cartoon-cute-freelancer-woman-working-online-learning-laptop-transparent-png-background-works-embodying-345422695.jpg"
+                 alt="User Picture" class="user-picture rounded-circle" style="width: 150px; height: 150px;" />
+            <RadzenLabel Text="Admin" Style="font-weight: bold; font-size: 18px; " />
+        </RadzenStack>
+        <div class="rz-p-4">
+            <NavMenu />
+        </div>
+    </RadzenSidebar>
+
+    <RadzenBody class="bg-white">
+        <div class="rz-p-1">
+            @Body
+        </div>
+    </RadzenBody>
+</RadzenLayout>
+
+@code {
+bool sidebar1Expanded = true;
+}

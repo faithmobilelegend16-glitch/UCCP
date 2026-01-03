@@ -1,0 +1,966 @@
+@page "/registration-tracking"
+@inject HttpClient Http
+@inject IJSRuntime Js
+@using Radzen
+<!-- Page Header -->
+<div class="page-header mb-4">
+    <div>
+        <h2 class="page-title">Registration Tracking</h2>
+        <p class="page-subtitle">Manage member registrations, payments, and group assignments</p>
+    </div>
+    <button class="btn-primary" @onclick="OpenAddForm">
+        <i class="fas fa-plus"></i> Add Registration
+    </button>
+</div>
+
+<!-- Registration Stats -->
+<div class="stats-container mb-4">
+    <div class="row g-3">
+        <div class="col-lg-3 col-md-6">
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-label">Total Registered</span>
+                </div>
+                <div class="stat-value">@totalRegistered</div>
+                <div class="stat-description">Members registered</div>
+                <div class="stat-meta">CYF Event 2025</div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-label">Paid Registration</span>
+                </div>
+                <div class="stat-value">@paidRegistration</div>
+                <div class="stat-description">Registration fees paid</div>
+                <div class="stat-meta">₱@(paidRegistration * 500)</div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-label">Paid Meals</span>
+                </div>
+                <div class="stat-value">@paidMeals</div>
+                <div class="stat-description">Members with meals paid</div>
+                <div class="stat-meta">₱@(paidMeals * 250)</div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-label">Groups Formed</span>
+                </div>
+                <div class="stat-value">@groupCount</div>
+                <div class="stat-description">Team/group assignments</div>
+                <div class="stat-meta">Auto-mixed grouping</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Registration Filters -->
+<div class="filters-section mb-4">
+    <div class="row g-3">
+        <div class="col-lg-4 col-md-6">
+            <div class="filter-group">
+                <label class="filter-label">Search Member</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-search search-icon"></i>
+                    <input class="filter-input" placeholder="Search by name..." @bind="@searchMember" @bind:event="oninput" @onkeyup="ApplyFilters"/>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 col-md-6">
+            <div class="filter-group">
+                <label class="filter-label">Filter by Registration Status</label>
+                <select class="filter-select" @onchange="OnRegistrationStatusChanged">
+                    <option value="">All Status</option>
+                    <option value="PAID">Paid</option>
+                    <option value="PENDING">Pending</option>
+                    <option value="NEW">New CYF</option>
+                </select>
+            </div>
+        </div>
+        <div class="col-lg-4 col-md-6">
+            <div class="filter-group">
+                <label class="filter-label">Filter by Meal Status</label>
+                <select class="filter-select" @onchange="OnMealStatusChanged">
+                    <option value="">All Meal Status</option>
+                    <option value="PAID">Meals Paid</option>
+                    <option value="UNPAID">Meals Unpaid</option>
+                </select>
+            </div>
+        </div>
+        <div class="col-lg-4 col-md-6">
+            <div class="filter-group">
+                <label class="filter-label">New CYF Members</label>
+                <select class="filter-select" @onchange="OnNewCYFFilterChanged">
+                    <option value="">All Members</option>
+                    <option value="YES">New CYF</option>
+                    <option value="NO">Returning</option>
+                </select>
+            </div>
+        </div>
+        <div class="col-lg-4 col-md-6">
+            <div class="filter-group">
+                <label class="filter-label">Filter by Group</label>
+                <select class="filter-select" @onchange="OnGroupFilterChanged">
+                    <option value="">All Groups</option>
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Registration Table -->
+<div class="registration-table-section mb-4">
+    <div class="table-header mb-3">
+        <h6 class="table-title">Total Registered: <span class="count-badge">@(filteredRegistrations?.Count ?? 0)</span></h6>
+        <div class="table-actions">
+            <button class="btn-action btn-secondary">
+                <i class="fas fa-print"></i> Print List
+            </button>
+        </div>
+    </div>
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+            <tr>
+                <th style="width: 50px;"><input type="checkbox" /></th>
+                <th style="width: 120px;">QR Code</th>
+                <th style="width: 150px;">Member Name</th>
+                <th style="width: 120px;">Location/Church</th>
+                <th style="width: 100px;">Registration</th>
+                <th style="width: 90px;">Meals</th>
+                <th style="width: 80px;">CYF</th>
+                <th style="width: 120px;">Group Assignment</th>
+                <th style="width: 100px;text-align: center">Action</th>
+            </tr>
+            </thead>
+            <tbody>
+            @if (filteredRegistrations != null && filteredRegistrations.Count > 0)
+            {
+                @foreach (var registration in filteredRegistrations.Take(20))
+                {
+                    <tr>
+                        <td>
+                            <input type="checkbox"/>
+                        </td>
+                        <td>
+                            <div class="cell-label">QR:</div>
+                            <div class="qr-container">
+                                <img src="@GenerateQRCode(registration.MemberName, registration.ChurchLocation)"
+                                     alt="QR Code"
+                                     class="qr-image"
+                                     title="@registration.MemberName - @registration.ChurchLocation" />
+                            </div>
+                        </td>
+                        <td>
+                            <div class="cell-label">Name:</div>
+                            <div class="cell-value">@registration.MemberName.ToUpper()</div>
+                        </td>
+                        <td>
+                            <div class="cell-label">Church:</div>
+                            <div class="cell-value">@registration.ChurchLocation</div>
+                        </td>
+                        <td>
+                            <div class="cell-label">Fee:</div>
+                            <div class="cell-value status-badge @registration.RegistrationStatus.ToLower()">
+                                @registration.RegistrationStatus
+                            </div>
+                        </td>
+                        <td>
+                            <div class="cell-label">Meals:</div>
+                            <div class="cell-value status-badge @(registration.MealsPaid ? "paid" : "unpaid")">
+                                @(registration.MealsPaid ? "PAID" : "UNPAID")
+                            </div>
+                        </td>
+                        <td>
+                            <div class="cell-label">Status:</div>
+                            <div class="cell-value status-badge @(registration.IsNewCYF ? "new" : "returning")">
+                                @(registration.IsNewCYF ? "NEW" : "OLD")
+                            </div>
+                        </td>
+                        <td>
+                            <div class="cell-label">Group:</div>
+                            <div class="cell-value">@(registration.GroupAssignment ?? "Unassigned")</div>
+                        </td>
+                        <td class="text-center">
+                            <RadzenButton Icon="settings"
+                                          Size="ButtonSize.Small"
+                                          ButtonStyle="ButtonStyle.Light"
+                                          Style="border-radius: 6px;"
+                                          Click="@(() => OpenEditForm(registration))" />
+                        </td>
+                     
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="10" class="text-center py-4">
+                        <span style="color: #999;">No registration records found</span>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Edit Form Modal -->
+@if (isEditFormVisible)
+{
+    <div class="modal-overlay" @onclick="CloseEditForm">
+        <div class="modal-content" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h5 class="modal-title">@(isAddingNew ? "Add New Registration" : "Edit Registration")</h5>
+                <button class="modal-close" @onclick="CloseEditForm">&times;</button>
+            </div>
+            
+            <div class="modal-body">
+                <form>
+                    <div class="form-group">
+                        <label class="form-label">Member Name *</label>
+                        <input type="text" class="form-input" @bind="editingRecord.MemberName" placeholder="Enter member name" />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Church Location *</label>
+                        <input type="text" class="form-input" @bind="editingRecord.ChurchLocation" placeholder="Enter church location" />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Phone Number *</label>
+                        <input type="tel" class="form-input" @bind="editingRecord.PhoneNumber" placeholder="Enter phone number" />
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Registration Status *</label>
+                            <select class="form-input" @bind="editingRecord.RegistrationStatus">
+                                <option value="PAID">Paid</option>
+                                <option value="PENDING">Pending</option>
+                                <option value="NEW">New CYF</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Is New CYF Member</label>
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="isNewCYF" @bind="editingRecord.IsNewCYF" />
+                                <label for="isNewCYF">Yes, this is a new CYF member</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Meals Status</label>
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="mealsPaid" @bind="editingRecord.MealsPaid" />
+                                <label for="mealsPaid">Meals Paid</label>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Group Assignment</label>
+                            <input type="text" class="form-input" @bind="editingRecord.GroupAssignment" placeholder="e.g., Team Red" />
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn-secondary" @onclick="CloseEditForm">Cancel</button>
+                <button class="btn-primary" @onclick="SaveRegistration">Save Registration</button>
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+    /* Page Header */
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 24px;
+    }
+    .page-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: #1f2937;
+        margin: 0 0 8px 0;
+    }
+    .page-subtitle {
+        font-size: 13px;
+        color: #9ca3af;
+        margin: 0;
+    }
+    .btn-primary {
+        background: linear-gradient(135deg, #8b5cf6, #a78bfa);
+        color: white;
+        border: none;
+        padding: 10px 16px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s;
+    }
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #7c3aed, #8b5cf6);
+        box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+    }
+    
+    .btn-secondary {
+        background: #e5e7eb;
+        color: #374151;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .btn-secondary:hover {
+        background: #d1d5db;
+    }
+
+    /* Filters Section */
+    .filters-section {
+        background: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    .filter-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: #374151;
+        margin: 0;
+    }
+    .input-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+    .search-icon {
+        position: absolute;
+        left: 12px;
+        color: #9ca3af;
+        font-size: 13px;
+        pointer-events: none;
+    }
+    .filter-input {
+        width: 100%;
+        padding: 8px 12px 8px 36px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-size: 13px;
+        color: #374151;
+        background: #fff;
+        transition: all 0.2s;
+    }
+    .filter-input:focus {
+        outline: none;
+        border-color: #8b5cf6;
+        box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.1);
+    }
+    .filter-select {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-size: 13px;
+        color: #374151;
+        background: #fff;
+        cursor: pointer;
+        transition: all 0.2s;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 8px center;
+        padding-right: 28px;
+    }
+    .filter-select:focus {
+        outline: none;
+        border-color: #8b5cf6;
+        box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.1);
+    }
+
+    /* Registration Table Section */
+    .registration-table-section {
+        background: #fff;
+        border-radius: 8px;
+        border: 1px solid #e5e7eb;
+        overflow: hidden;
+    }
+    .table-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    .table-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #1f2937;
+        margin: 0;
+    }
+    .count-badge {
+        color: #8b5cf6;
+        font-weight: 700;
+    }
+    .table-actions {
+        display: flex;
+        gap: 8px;
+    }
+    .btn-action {
+        background: #dbeafe;
+        color: #0369a1;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 5px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .btn-action:hover {
+        background: #bfdbfe;
+    }
+    .btn-action.btn-secondary {
+        background: #f3f4f6;
+        color: #6b7280;
+    }
+    .btn-action.btn-secondary:hover {
+        background: #e5e7eb;
+    }
+
+    /* Data Table */
+    .table-container {
+        overflow-x: auto;
+    }
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+    }
+    .data-table thead {
+        background-color: #f9fafb;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    .data-table thead th {
+        padding: 12px 16px;
+        text-align: left;
+        font-weight: 600;
+        color: #374151;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+    .data-table tbody tr {
+        border-bottom: 1px solid #e5e7eb;
+        transition: background-color 0.2s;
+    }
+    .data-table tbody tr:hover {
+        background-color: #f9fafb;
+    }
+    .data-table tbody td {
+        padding: 12px 16px;
+        vertical-align: middle;
+    }
+    .cell-label {
+        font-size: 12px;
+        color: #9ca3af;
+        margin-bottom: 2px;
+    }
+    .cell-value {
+        font-size: 13px;
+        color: #1f2937;
+        font-weight: 500;
+    }
+
+    /* QR Code Styling */
+    .qr-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .qr-image {
+        width: 80px;
+        height: 80px;
+        border: 1px solid #e5e7eb;
+        border-radius: 4px;
+        padding: 4px;
+        background: #fff;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .qr-image:hover {
+        box-shadow: 0 2px 8px rgba(139, 92, 246, 0.2);
+        border-color: #8b5cf6;
+        transform: scale(1.05);
+    }
+
+    /* Status Badge */
+    .status-badge {
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 600;
+        text-align: center;
+        display: inline-block;
+    }
+    .status-badge.paid {
+        background: #dcfce7;
+        color: #15803d;
+    }
+    .status-badge.pending {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+    .status-badge.new {
+        background: #fef3c7;
+        color: #92400e;
+    }
+    .status-badge.returning {
+        background: #dbeafe;
+        color: #0369a1;
+    }
+    .status-badge.unpaid {
+        background: #f3f4f6;
+        color: #6b7280;
+    }
+
+    /* Action Buttons */
+    .btn-action-small {
+        width: 32px;
+        height: 32px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        transition: all 0.2s;
+    }
+    .btn-action-small.view {
+        background: #dbeafe;
+        color: #0369a1;
+    }
+    .btn-action-small.view:hover {
+        background: #bfdbfe;
+    }
+
+    /* Stats Container */
+    .stats-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 16px;
+    }
+    .stat-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        transition: box-shadow 0.2s;
+    }
+    .stat-card:hover {
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .stat-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+    .stat-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #9ca3af;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .stat-value {
+        font-size: 32px;
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 8px;
+    }
+    .stat-description {
+        font-size: 13px;
+        font-weight: 600;
+        color: #1f2937;
+        margin-bottom: 4px;
+    }
+    .stat-meta {
+        font-size: 12px;
+        color: #9ca3af;
+    }
+
+    /* Modal Styles */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+    .modal-content {
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 20px 25px rgba(0, 0, 0, 0.15);
+        max-width: 600px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+        animation: slideIn 0.3s ease-out;
+    }
+    @@keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    .modal-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #1f2937;
+        margin: 0;
+    }
+    .modal-close {
+        background: none;
+        border: none;
+        font-size: 24px;
+        color: #9ca3af;
+        cursor: pointer;
+        padding: 0;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: color 0.2s;
+    }
+    .modal-close:hover {
+        color: #374151;
+    }
+    .modal-body {
+        padding: 24px;
+    }
+    .modal-footer {
+        padding: 16px 20px;
+        border-top: 1px solid #e5e7eb;
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+    }
+
+    /* Form Styles */
+    .form-group {
+        margin-bottom: 20px;
+    }
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+    .form-label {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 8px;
+    }
+    .form-input {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-size: 13px;
+        color: #1f2937;
+        transition: all 0.2s;
+        font-family: inherit;
+    }
+    .form-input:focus {
+        outline: none;
+        border-color: #8b5cf6;
+        box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+    }
+    .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .checkbox-group input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+        accent-color: #8b5cf6;
+    }
+    .checkbox-group label {
+        font-size: 13px;
+        color: #374151;
+        cursor: pointer;
+        margin: 0;
+    }
+
+    /* Responsive */
+    @@media (max-width: 768px) {
+        .page-header {
+            flex-direction: column;
+            gap: 16px;
+        }
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+        .modal-content {
+            width: 95%;
+        }
+        .table-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
+        }
+        .data-table {
+            font-size: 12px;
+        }
+        .data-table thead th {
+            padding: 8px 10px;
+            font-size: 10px;
+        }
+        .data-table tbody td {
+            padding: 8px 10px;
+        }
+        .qr-image {
+            width: 60px;
+            height: 60px;
+        }
+    }
+</style>
+
+@code {
+    private string searchMember = "";
+    private string selectedRegistrationStatus = "";
+    private string selectedMealStatus = "";
+    private string selectedNewCYF = "";
+    private string selectedGroup = "";
+    private bool isEditFormVisible = false;
+    private bool isAddingNew = false;
+    private int totalRegistered = 10;
+    private int paidRegistration = 38;
+    private int paidMeals = 32;
+    private int groupCount = 5;
+    
+    private List<RegistrationRecord> registrationRecords;
+    private List<RegistrationRecord> filteredRegistrations;
+    private RegistrationRecord editingRecord = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        registrationRecords = new List<RegistrationRecord>
+        {
+            new RegistrationRecord { MemberName = "Mae Jaban", ChurchLocation = "Butuan City", PhoneNumber = "555-0101", RegistrationStatus = "PAID", MealsPaid = true, IsNewCYF = false, GroupAssignment = "Team Red" },
+            new RegistrationRecord { MemberName = "Yudane Calo", ChurchLocation = "Butuan City", PhoneNumber = "555-0102", RegistrationStatus = "PAID", MealsPaid = true, IsNewCYF = false, GroupAssignment = "Team Blue" },
+            new RegistrationRecord { MemberName = "Jonathan Andahan", ChurchLocation = "Patin-ay", PhoneNumber = "555-0103", RegistrationStatus = "PAID", MealsPaid = false, IsNewCYF = false, GroupAssignment = "Team Yellow" },
+            new RegistrationRecord { MemberName = "Sarah Brown", ChurchLocation = "Patin-ay", PhoneNumber = "555-0104", RegistrationStatus = "PENDING", MealsPaid = true, IsNewCYF = true, GroupAssignment = "Team Green" },
+            new RegistrationRecord { MemberName = "Michael Davis", ChurchLocation = "Patin-ay", PhoneNumber = "555-0105", RegistrationStatus = "PAID", MealsPaid = true, IsNewCYF = false, GroupAssignment = "Team Yellow" },
+            new RegistrationRecord { MemberName = "Jennifer Miller", ChurchLocation = "Patin-ay", PhoneNumber = "555-0106", RegistrationStatus = "PAID", MealsPaid = true, IsNewCYF = true, GroupAssignment = "Team Blue" },
+            new RegistrationRecord { MemberName = "James Wilson", ChurchLocation = "Patin-ay", PhoneNumber = "555-0107", RegistrationStatus = "PAID", MealsPaid = false, IsNewCYF = false, GroupAssignment = "Team Purple" },
+            new RegistrationRecord { MemberName = "Patricia Moore", ChurchLocation = "Patin-ay", PhoneNumber = "555-0108", RegistrationStatus = "PAID", MealsPaid = true, IsNewCYF = false, GroupAssignment = "Team Red" },
+            new RegistrationRecord { MemberName = "Robert Taylor", ChurchLocation = "Patin-ay", PhoneNumber = "555-0109", RegistrationStatus = "PAID", MealsPaid = true, IsNewCYF = true, GroupAssignment = "Team Green" },
+            new RegistrationRecord { MemberName = "Linda Anderson", ChurchLocation = "Patin-ay", PhoneNumber = "555-0110", RegistrationStatus = "PENDING", MealsPaid = false, IsNewCYF = false, GroupAssignment = null }
+        };
+        filteredRegistrations = new List<RegistrationRecord>(registrationRecords);
+        await base.OnInitializedAsync();
+    }
+    
+    
+    private void OpenAddForm()
+    {
+        isAddingNew = true;
+        editingRecord = new RegistrationRecord();
+        isEditFormVisible = true;
+    }
+
+    private void OpenEditForm(RegistrationRecord record)
+    {
+        isAddingNew = false;
+
+        // Clone to avoid editing table row directly
+        editingRecord = new RegistrationRecord
+        {
+            MemberName = record.MemberName,
+            ChurchLocation = record.ChurchLocation,
+            PhoneNumber = record.PhoneNumber,
+            RegistrationStatus = record.RegistrationStatus,
+            MealsPaid = record.MealsPaid,
+            IsNewCYF = record.IsNewCYF,
+            GroupAssignment = record.GroupAssignment
+        };
+
+        isEditFormVisible = true;
+    }
+
+    private void CloseEditForm()
+    {
+        isEditFormVisible = false;
+        isAddingNew = false;
+        editingRecord = new RegistrationRecord();
+    }
+
+    private void SaveRegistration()
+    {
+        if (string.IsNullOrWhiteSpace(editingRecord.MemberName) ||
+            string.IsNullOrWhiteSpace(editingRecord.ChurchLocation))
+        {
+            return;
+        }
+
+        if (isAddingNew)
+        {
+            registrationRecords.Add(editingRecord);
+        }
+        else
+        {
+            var existing = registrationRecords.FirstOrDefault(r =>
+                r.MemberName == editingRecord.MemberName &&
+                r.PhoneNumber == editingRecord.PhoneNumber);
+
+            if (existing != null)
+            {
+                existing.ChurchLocation = editingRecord.ChurchLocation;
+                existing.RegistrationStatus = editingRecord.RegistrationStatus;
+                existing.MealsPaid = editingRecord.MealsPaid;
+                existing.IsNewCYF = editingRecord.IsNewCYF;
+                existing.GroupAssignment = editingRecord.GroupAssignment;
+            }
+        }
+
+
+        ApplyFilters();
+        CloseEditForm();
+    }
+
+    private string GenerateQRCode(string memberName, string churchLocation)
+    {
+        // Format data for QR code
+        string qrData = Uri.EscapeDataString($"Name: {memberName}\nChurch: {churchLocation}");
+        
+        // Using QR Server API (free service)
+        string qrUrl = $"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={qrData}";
+        
+        return qrUrl;
+    }
+
+    private void ApplyFilters()
+    {
+        filteredRegistrations = registrationRecords.Where(r =>
+            (string.IsNullOrEmpty(searchMember) ||
+             r.MemberName.Contains(searchMember, StringComparison.OrdinalIgnoreCase)) &&
+            (string.IsNullOrEmpty(selectedRegistrationStatus) || r.RegistrationStatus == selectedRegistrationStatus) &&
+            (string.IsNullOrEmpty(selectedMealStatus) ||
+             (selectedMealStatus == "PAID" && r.MealsPaid) ||
+             (selectedMealStatus == "UNPAID" && !r.MealsPaid)) &&
+            (string.IsNullOrEmpty(selectedNewCYF) ||
+             (selectedNewCYF == "YES" && r.IsNewCYF) ||
+             (selectedNewCYF == "NO" && !r.IsNewCYF)) &&
+            (string.IsNullOrEmpty(selectedGroup) || (r.GroupAssignment ?? "") == selectedGroup)
+        ).ToList();
+    }
+
+    private void OnRegistrationStatusChanged(ChangeEventArgs e)
+    {
+        selectedRegistrationStatus = e.Value?.ToString() ?? "";
+        ApplyFilters();
+    }
+
+    private void OnMealStatusChanged(ChangeEventArgs e)
+    {
+        selectedMealStatus = e.Value?.ToString() ?? "";
+        ApplyFilters();
+    }
+
+    private void OnNewCYFFilterChanged(ChangeEventArgs e)
+    {
+        selectedNewCYF = e.Value?.ToString() ?? "";
+        ApplyFilters();
+    }
+
+    private void OnGroupFilterChanged(ChangeEventArgs e)
+    {
+        selectedGroup = e.Value?.ToString() ?? "";
+        ApplyFilters();
+    }
+
+    public class RegistrationRecord
+    {
+        public string MemberName { get; set; }
+        public string ChurchLocation { get; set; }
+        public string PhoneNumber { get; set; }
+        public string RegistrationStatus { get; set; }
+        public bool MealsPaid { get; set; }
+        public bool IsNewCYF { get; set; }
+        public string GroupAssignment { get; set; }
+    }
+
+   
+    private List<GroupSummary> GetGroupSummary()
+    {
+        return registrationRecords
+            .Where(r => !string.IsNullOrEmpty(r.GroupAssignment))
+            .GroupBy(r => r.GroupAssignment)
+            .Select(g => new GroupSummary
+            {
+                GroupName = g.Key,
+                MemberCount = g.Count(),
+                TotalScore = 0
+            })
+            .ToList();
+    }
+
+    public class GroupSummary
+    {
+        public string GroupName { get; set; }
+        public int MemberCount { get; set; }
+        public int TotalScore { get; set; }
+    }
+
+}
